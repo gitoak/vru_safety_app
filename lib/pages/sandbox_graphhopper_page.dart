@@ -13,9 +13,30 @@ class SandboxGraphhopperPage extends StatefulWidget {
 
 class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
   LatLng? _currentPosition;
-  final LatLng ziel = LatLng(48.9985932110444, 12.121423264124944); // Bajuwarenstraße 4, Regensburg (Beispiel-Koordinaten)
+  final LatLng ziel = LatLng(
+    48.9985932110444,
+    12.121423264124944,
+  ); // Bajuwarenstraße 4, Regensburg
   List<LatLng> routePoints = [];
   bool loading = true;
+  bool safeRoute = true;
+
+  // Gefährliche Bereiche als Polygone (Vielecke)
+final List<List<LatLng>> dangerousPolygons = [
+  //one with 6 corners
+  [
+    LatLng(49.0018, 12.1106), // oben links
+    LatLng(49.0018, 12.1119), // oben rechts
+    LatLng(49.0016, 12.1119), // unten rechts
+    LatLng(49.0016, 12.1106), // unten links
+    LatLng(49.0017, 12.1107), // Punkt in der Mitte
+    LatLng(49.0018, 12.1106), // zurück zum Startpunkt
+  ],
+];
+
+  // Hilfsfunktion: Alle Polygonpunkte als Liste für block_area
+  List<LatLng> getAllPolygonPoints(List<List<LatLng>> polygons) =>
+      polygons.expand((poly) => poly).toList();
 
   @override
   void initState() {
@@ -24,7 +45,10 @@ class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
   }
 
   Future<void> _initRoute() async {
-    // Hole User-Standort
+    setState(() {
+      loading = true;
+      routePoints = [];
+    });
     final position = await _determinePosition();
     if (position == null) {
       setState(() => loading = false);
@@ -32,9 +56,13 @@ class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
     }
     setState(() => _currentPosition = position);
 
-    // Hole Route von GraphHopper
     try {
-      final points = await GraphHopperApiManager().getRoute(_currentPosition!, ziel);
+      // Route mit oder ohne avoidPoints (Polygone) berechnen
+      List<LatLng> points = await GraphHopperApiManager().getRoute(
+        _currentPosition!,
+        ziel,
+        avoidPoints: safeRoute ? getAllPolygonPoints(dangerousPolygons) : null,
+      );
       setState(() {
         routePoints = points;
         loading = false;
@@ -65,7 +93,23 @@ class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('GraphHopper OSM Sandbox')),
+      appBar: AppBar(
+        title: const Text('Fußgänger-Route zu Bajuwarenstraße 4'),
+        actions: [
+          Row(
+            children: [
+              const Text('Safe Route', style: TextStyle(fontSize: 16)),
+              Switch(
+                value: safeRoute,
+                onChanged: (val) {
+                  setState(() => safeRoute = val);
+                  _initRoute();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
       body: loading || _currentPosition == null
           ? const Center(child: CircularProgressIndicator())
           : FlutterMap(
@@ -75,8 +119,24 @@ class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                   subdomains: const ['a', 'b', 'c'],
+                ),
+                // Gefahren-Polygone als Flächen
+                PolygonLayer(
+                  polygons: [
+                    ...dangerousPolygons.map(
+                      (poly) => Polygon(
+                        points: poly,
+                        color: Colors.red.withOpacity(
+                          0.5,
+                        ), // weniger transparent
+                        borderStrokeWidth: 4, // dickere Linie
+                        borderColor: Colors.red,
+                      ),
+                    ),
+                  ],
                 ),
                 PolylineLayer(
                   polylines: [
@@ -90,19 +150,27 @@ class _SandboxGraphhopperPageState extends State<SandboxGraphhopperPage> {
                 ),
                 MarkerLayer(
                   markers: [
-                    // User-Standort mit eigenem Icon
+                    // User-Standort
                     Marker(
                       width: 50,
                       height: 50,
                       point: _currentPosition!,
-                      child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
+                      child: const Icon(
+                        Icons.person_pin_circle,
+                        color: Colors.blue,
+                        size: 40,
+                      ),
                     ),
                     // Zielmarker
                     Marker(
                       width: 50,
                       height: 50,
                       point: ziel,
-                      child: const Icon(Icons.flag, color: Colors.red, size: 40),
+                      child: const Icon(
+                        Icons.flag,
+                        color: Colors.red,
+                        size: 40,
+                      ),
                     ),
                   ],
                 ),
