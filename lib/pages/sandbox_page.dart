@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:vru_safety_app/pages/sandbox_graphhopper_page.dart';
+import 'graph_hopper_poc_page.dart';
 import 'osm_poc_page.dart';
 import '../navigation_config.dart';
 import '../bloc/nav_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SandboxPage extends StatelessWidget {
-  const SandboxPage({Key? key}) : super(key: key);
+  const SandboxPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +50,15 @@ class SandboxPage extends StatelessWidget {
                 );
               },
               child: const Text('Go to GraphHopper Sandbox'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GraphHopperPocPage()),
+                );
+              },
+              child: const Text('Go to Graph Hopper POC Page'),
             ),
           ],
         ),
