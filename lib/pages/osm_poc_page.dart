@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -14,14 +14,24 @@ class OsmPocPage extends StatefulWidget {
 class _OsmPocPageState extends State<OsmPocPage> {
   LatLng? _currentPosition;
   StreamSubscription<Position>? _positionStreamSubscription;
-  final MapController _mapController = MapController();
+  final fm.MapController _mapController = fm.MapController();
   bool _isLoading = true;
   double _initialZoom = 16.0;
+  bool _mapIsReady = false; // Flag to track if onMapReady has been called
 
   @override
   void initState() {
     super.initState();
-    _initializeLocationStream();
+    _initializePage();
+  }
+
+  Future<void> _initializePage() async {
+    await _initializeLocationStream();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _initializeLocationStream() async {
@@ -38,7 +48,6 @@ class _OsmPocPageState extends State<OsmPocPage> {
             ),
           ),
         );
-        setState(() => _isLoading = false);
       }
       return;
     }
@@ -51,7 +60,6 @@ class _OsmPocPageState extends State<OsmPocPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Location permissions are denied.')),
           );
-          setState(() => _isLoading = false);
         }
         return;
       }
@@ -66,7 +74,6 @@ class _OsmPocPageState extends State<OsmPocPage> {
             ),
           ),
         );
-        setState(() => _isLoading = false);
       }
       return;
     }
@@ -81,13 +88,12 @@ class _OsmPocPageState extends State<OsmPocPage> {
             initialPosition.latitude,
             initialPosition.longitude,
           );
-          _isLoading = false;
         });
+        // Move map in onMapReady if _currentPosition is available
       }
     } catch (e) {
       debugPrint("Error getting initial position: $e");
       if (mounted) {
-        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error getting initial location: $e')),
         );
@@ -107,7 +113,10 @@ class _OsmPocPageState extends State<OsmPocPage> {
               setState(() {
                 _currentPosition = newPosition;
               });
-              _mapController.move(newPosition, _mapController.camera.zoom);
+              if (_mapIsReady) {
+                // Use the _mapIsReady flag
+                _mapController.move(newPosition, _mapController.camera.zoom);
+              }
               debugPrint("Live location update: $newPosition");
             }
           },
@@ -134,28 +143,40 @@ class _OsmPocPageState extends State<OsmPocPage> {
       appBar: AppBar(title: const Text('OSM POC Page (Live Location)')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _currentPosition == null
+          : _currentPosition ==
+                null // Adjusted condition
           ? const Center(
               child: Text(
                 'Unable to fetch location. Please check permissions and services.',
               ),
             )
-          : FlutterMap(
+          : fm.FlutterMap(
               mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _currentPosition ?? const LatLng(0, 0),
+              options: fm.MapOptions(
+                initialCenter:
+                    _currentPosition ?? const LatLng(49.0134, 12.1016),
                 initialZoom: _initialZoom,
+                onMapReady: () {
+                  if (mounted) {
+                    setState(() {
+                      _mapIsReady = true;
+                    });
+                    if (_currentPosition != null) {
+                      _mapController.move(_currentPosition!, _initialZoom);
+                    }
+                  }
+                },
               ),
               children: [
-                TileLayer(
+                fm.TileLayer(
                   urlTemplate:
                       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                   subdomains: const ['a', 'b', 'c'],
                 ),
                 if (_currentPosition != null)
-                  MarkerLayer(
+                  fm.MarkerLayer(
                     markers: [
-                      Marker(
+                      fm.Marker(
                         width: 80.0,
                         height: 80.0,
                         point: _currentPosition!,
