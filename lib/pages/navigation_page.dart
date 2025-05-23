@@ -43,10 +43,35 @@ class _NavigationPageState extends State<NavigationPage> {
   _dangerZonePolygons = // Explicitly type with <Object>
       []; // Added for storing loaded danger zones
 
+  List<fm.Marker> _dangerZoneMarkers = []; // Markers for danger zones
+
+  void _updateDangerZoneMarkers() {
+    setState(() {
+      _dangerZoneMarkers = _dangerZonePolygons.map((polygon) {
+        // Calculate the center of the polygon
+        final center = polygon.points.reduce((a, b) => LatLng(
+              (a.latitude + b.latitude) / 2,
+              (a.longitude + b.longitude) / 2,
+            ));
+
+        return fm.Marker(
+          width: 40.0,
+          height: 40.0,
+          point: center,
+          child: const Icon(
+            Icons.warning,
+            color: Colors.red,
+            size: 30,
+          ),
+        );
+      }).toList();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    _initializePage();
+    _initializePage().then((_) => _updateDangerZoneMarkers()); // Update markers after polygons are loaded
   }
 
   Future<void> _initializePage() async {
@@ -259,7 +284,14 @@ class _NavigationPageState extends State<NavigationPage> {
 
       setState(() {
         _dangerZonePolygons = polygons;
+        _updateDangerZoneMarkers(); // Update markers when polygons are loaded
       });
+
+      // Debug: Print loaded danger zone polygons and their coordinates
+      print('Loaded danger zone polygons: \n');
+      for (var polygon in polygons) {
+        print(polygon.points);
+      }
     } catch (error) {
       print('Error loading danger zones: $error');
     }
@@ -637,26 +669,10 @@ class _NavigationPageState extends State<NavigationPage> {
                             fm.PolygonLayer(
                               polygons: _dangerZonePolygons,
                               polygonCulling: true,
-                            )
-                          else
-                            fm.PolygonLayer(
-                              polygons: [
-                                fm.Polygon<Object>(
-                                  points: [
-                                    const LatLng(49.010, 12.098),
-                                    const LatLng(49.019, 12.098),
-                                    const LatLng(49.019, 12.102),
-                                    const LatLng(49.010, 12.102),
-                                    const LatLng(49.010, 12.098),
-                                  ],
-                                  color: Colors.orange.withOpacity(0.3),
-                                  borderColor: Colors.orange,
-                                  borderStrokeWidth: 3.0,
-                                ),
-                              ],
                             ),
                           fm.MarkerLayer(
                             markers: [
+                              ..._dangerZoneMarkers,
                               if (_userPosition != null)
                                 fm.Marker(
                                   width: 60.0,
