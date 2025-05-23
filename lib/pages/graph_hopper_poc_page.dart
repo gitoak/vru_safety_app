@@ -30,7 +30,7 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
     try {
       final response = await http.get(
         Uri.parse(
-          'http://graphhopper.jannik.dev/route?point=52.517,13.388&point=52.520,13.377&profile=car&locale=en&instructions=true',
+          'https://graphhopper.jannik.dev/route?point=49.010,12.098&point=49.019,12.102&profile=foot&locale=en&instructions=true',
         ),
       );
       if (response.statusCode == 200) {
