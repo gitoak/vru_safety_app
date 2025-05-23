@@ -63,7 +63,7 @@ final List<NavScreenConfig> navScreens = [
   NavScreenConfig(
     route: '/graphhopper-poc',
     label: 'GraphHopper POC',
-    icon: Icons.map,
+    icon: Icons.route_outlined,
     builder: () => const GraphHopperPocPage(),
     inNavBar: false,
   ),
@@ -71,7 +71,7 @@ final List<NavScreenConfig> navScreens = [
   NavScreenConfig(
     route: '/sandbox-graphhopper',
     label: 'GraphHopper Sandbox',
-    icon: Icons.map,
+    icon: Icons.explore_outlined,
     builder: () => const SandboxGraphhopperPage(),
     inNavBar: false,
   ),
