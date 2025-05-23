@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'osm_poc_page.dart';
+import 'graph_hopper_poc_page.dart';
 
 class SandboxPage extends StatelessWidget {
   const SandboxPage({Key? key}) : super(key: key);
@@ -21,6 +22,16 @@ class SandboxPage extends StatelessWidget {
                 );
               },
               child: const Text('Go to OSM POC Page'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to Graph Hopper POC page
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GraphHopperPocPage()),
+                );
+              },
+              child: const Text('Go to Graph Hopper POC Page'),
             ),
           ],
         ),
