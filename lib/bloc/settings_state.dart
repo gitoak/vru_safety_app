@@ -1,12 +1,8 @@
 import 'package:equatable/equatable.dart';
 
 enum VruCategory {
-  deaf,
-  hardOfHearing,
   blind,
   visuallyImpaired,
-  intoxicated,
-  child,
 }
 
 class SettingsState extends Equatable {
