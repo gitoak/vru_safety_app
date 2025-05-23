@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'pages/graph_hopper_poc_page.dart';
 import 'pages/home_page.dart';
+import 'pages/sandbox_graphhopper_page.dart';
 import 'pages/sandbox_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/osm_poc_page.dart';
-import 'pages/graph_hopper_poc_page.dart';
 
 class NavScreenConfig {
   final String route;
@@ -57,6 +57,22 @@ final List<NavScreenConfig> navScreens = [
     label: 'OSM POC',
     icon: Icons.map,
     builder: () => const OsmPocPage(),
+    inNavBar: false,
+  ),
+  // GraphHopperPocPage
+  NavScreenConfig(
+    route: '/graphhopper-poc',
+    label: 'GraphHopper POC',
+    icon: Icons.map,
+    builder: () => const GraphHopperPocPage(),
+    inNavBar: false,
+  ),
+  // SandboxGraphhopperPage
+  NavScreenConfig(
+    route: '/sandbox-graphhopper',
+    label: 'GraphHopper Sandbox',
+    icon: Icons.map,
+    builder: () => const SandboxGraphhopperPage(),
     inNavBar: false,
   ),
 ];

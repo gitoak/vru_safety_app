@@ -12,19 +12,7 @@ class SandboxPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sandbox Page'),
-        leading: IconButton(
-          icon: const Icon(Icons.home),
-          onPressed: () {
-            // Use Bloc navigation to go to Home (or any other route from navigation_config.dart)
-            final homeIndex = navScreens.indexWhere((s) => s.route == '/');
-            if (homeIndex != -1) {
-              context.read<NavBloc>().add(NavTo(AppPage.values[homeIndex]));
-            }
-          },
-        ),
-      ),
+      appBar: AppBar(title: const Text('Sandbox Page')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -33,30 +21,36 @@ class SandboxPage extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Navigate to OSM POC page
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const OsmPocPage()));
+                final idx = navScreens.indexWhere((s) => s.route == '/osm-poc');
+                if (idx != -1) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => navScreens[idx].builder()),
+                  );
+                }
               },
               child: const Text('Go to OSM POC Page'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SandboxGraphhopperPage(),
-                  ),
-                );
+                final idx = navScreens.indexWhere((s) => s.route == '/sandbox-graphhopper');
+                if (idx != -1) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => navScreens[idx].builder()),
+                  );
+                }
               },
               child: const Text('Go to GraphHopper Sandbox'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const GraphHopperPocPage()),
-                );
+                final idx = navScreens.indexWhere((s) => s.route == '/graphhopper-poc');
+                if (idx != -1) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => navScreens[idx].builder()),
+                  );
+                }
               },
               child: const Text('Go to Graph Hopper POC Page'),
             ),
