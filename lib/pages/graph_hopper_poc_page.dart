@@ -35,6 +35,7 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
   final fm.MapController _mapController = fm.MapController(); // Use fm. alias
   double _currentZoom = 15.0;
   bool _mapReady = false;
+  bool _compassMode = false; // Toggle for compass/navigation mode
 
   List<fm.Polygon<Object>>
   _dangerZonePolygons = // Explicitly type with <Object>
@@ -159,12 +160,17 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
             }
           },
         );
-
     _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
       if (mounted) {
+        final heading = event.heading ?? 0.0;
         setState(() {
-          _userHeading = event.heading ?? 0.0; // Degrees
+          _userHeading = heading; // Always store the heading
         });
+
+        // In compass mode, rotate the map instead of the marker
+        if (_compassMode && _mapReady && _userPosition != null) {
+          _mapController.rotate(heading); // Add 180° to fix orientation
+        }
       }
     });
   }
@@ -449,6 +455,40 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
     _searchAndRoute();
   }
 
+  void _centerMapOnCurrentPosition() {
+    if (_userPosition != null && _mapReady) {
+      // Center the map on user position with appropriate zoom
+      _mapController.move(
+        _userPosition!,
+        18.0,
+      );
+
+      // Ensure the map rotation matches the user's heading
+      if (_compassMode) {
+        _mapController.rotate(-_userHeading);
+      } else {
+        _mapController.rotate(0.0); // Reset rotation if not in compass mode
+      }
+    }
+  }
+
+  void _toggleCompassMode() {
+    setState(() {
+      _compassMode = !_compassMode;
+    });
+
+    if (_mapReady) {
+      if (_compassMode) {
+        // When entering compass mode, rotate map to current heading        _mapController.rotate(
+          -_userHeading,
+        ); // Correct rotation without 180° adjustment
+      } else {
+        // When exiting compass mode, reset map rotation
+        _mapController.rotate(0.0);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
@@ -687,7 +727,9 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                                   height: 60.0,
                                   point: _userPosition!,
                                   child: Transform.rotate(
-                                    angle: (_userHeading) * (math.pi / 180),
+                                    angle: _compassMode
+                                        ? 0.0
+                                        : (_userHeading) * (math.pi / 180),
                                     child: const Icon(
                                       Icons.navigation,
                                       color: Colors.blue,
@@ -729,6 +771,30 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                   ),
               ],
             ),
+      floatingActionButton: _userPosition != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton(
+                  heroTag: "compass_toggle",
+                  onPressed: _toggleCompassMode,
+                  tooltip: _compassMode
+                      ? 'Exit compass mode'
+                      : 'Enter compass mode',
+                  backgroundColor: _compassMode ? Colors.orange : null,
+                  child: Icon(_compassMode ? Icons.explore : Icons.explore_off),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  heroTag: "center_location",
+                  onPressed: _centerMapOnCurrentPosition,
+                  tooltip: 'Center on my location',
+                  child: const Icon(Icons.my_location),
+                ),
+              ],
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }
