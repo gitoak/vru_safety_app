@@ -218,7 +218,7 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
       );
       debugPrint('Checking danger status with API: $uri'); // Log the URI
 
-      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
+      final resp = await http.get(uri).timeout(const Duration(seconds: 5));
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
