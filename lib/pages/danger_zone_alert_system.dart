@@ -7,6 +7,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 
+// TOP-LEVEL FUNCTION FOR BACKGROUND NOTIFICATION TAPS
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // ignore: avoid_print
+  print(
+    'Notification Tapped (Background/Terminated): ID(${notificationResponse.id}), ActionID(${notificationResponse.actionId}), Payload: ${notificationResponse.payload}',
+  );
+  if (notificationResponse.input?.isNotEmpty ?? false) {
+    // ignore: avoid_print
+    print('Notification Action Input: ${notificationResponse.input}');
+  }
+  // TODO: Implement navigation or other logic based on the notification payload for background taps.
+}
+
 class DangerZoneAlertSystem extends StatefulWidget {
   final List<List<LatLng>> dangerousPolygons;
   const DangerZoneAlertSystem({Key? key, required this.dangerousPolygons})
@@ -27,44 +41,102 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
     _startLocationMonitoring();
   }
 
-  Future<void> _initializeAndRequestPermissions() async {
-    _notifications = FlutterLocalNotificationsPlugin();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings();
-    await _notifications!.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+  // Handler for when a notification is tapped (app in foreground or background)
+  void _onDidReceiveNotificationResponse(
+    NotificationResponse notificationResponse,
+  ) {
+    debugPrint(
+      'Notification Tapped (Foreground/Background): ID(${notificationResponse.id}), Payload: ${notificationResponse.payload}',
     );
-    // Create notification channel with vibration and sound (Android)
-    await _notifications!
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(
-          AndroidNotificationChannel(
-            'danger_zone',
-            'Gefahrenzonen',
-            description: 'Warnungen bei Annäherung an Gefahrenzonen',
-            importance: Importance.max,
-            playSound: true,
-            enableVibration: true,
-            vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
-            showBadge: true,
+    // TODO: Implement navigation or other logic based on the notification payload.
+    // Example: if (notificationResponse.payload == 'some_route') { Navigator.push(...); }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Notification tapped with payload: ${notificationResponse.payload ?? 'none'}',
           ),
-        );
-    // Request notification permission (iOS)
-    final iosImplementation = _notifications!
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (iosImplementation != null) {
-      await iosImplementation.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
+        ),
       );
     }
+  }
+
+  Future<void> _initializeAndRequestPermissions() async {
+    _notifications = FlutterLocalNotificationsPlugin();
+
+    // Request notification permission for Android 13+
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notifications!
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+    if (androidImplementation != null) {
+      final bool? granted = await androidImplementation
+          .requestNotificationsPermission();
+      debugPrint("Android Notification permission granted: $granted");
+      if (granted == false && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Notification permission denied. Please enable it in settings.',
+            ),
+          ),
+        );
+      }
+    }
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    // For iOS, request permissions and configure foreground presentation options
+    final DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+    await _notifications!.initialize(
+      InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      ),
+      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+    );
+    debugPrint("FlutterLocalNotificationsPlugin initialized.");
+
+    // Create notification channel (Android) - THIS IS CRUCIAL
+    // If you change channel settings, YOU MUST UNINSTALL AND REINSTALL THE APP on Android.
+    await androidImplementation?.createNotificationChannel(
+      AndroidNotificationChannel(
+        'danger_zone',
+        'Gefahrenzonen',
+        description: 'Warnungen bei Annäherung an Gefahrenzonen',
+        importance:
+            Importance.max, // Ensure this is MAX for heads-up notification
+        playSound: true,
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
+        showBadge: true,
+      ),
+    );
+    debugPrint("Android notification channel created/updated.");
+
     // Request location permission
-    await Geolocator.requestPermission();
+    LocationPermission locationPermission =
+        await Geolocator.requestPermission();
+    debugPrint("Location permission status: $locationPermission");
+    if (locationPermission == LocationPermission.denied ||
+        locationPermission == LocationPermission.deniedForever && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Location permission denied. App functionality will be limited.',
+          ),
+        ),
+      );
+    }
   }
 
   void _showDangerNotification() async {
@@ -122,14 +194,20 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
       // Show a SnackBar as a fallback to confirm the button works
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Testbenachrichtigung ausgelöst (siehe Debug-Konsole)')),
+          const SnackBar(
+            content: Text(
+              'Testbenachrichtigung ausgelöst (siehe Debug-Konsole)',
+            ),
+          ),
         );
       }
     } catch (e) {
       debugPrint('Notification error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Senden der Benachrichtigung: $e')),
+          SnackBar(
+            content: Text('Fehler beim Senden der Benachrichtigung: $e'),
+          ),
         );
       }
     }
