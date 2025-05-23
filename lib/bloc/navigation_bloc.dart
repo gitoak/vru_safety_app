@@ -73,7 +73,7 @@ class NavigationLoadSuccess extends NavigationState {
   final LatLng? destinationPosition;
   final List<String> suggestions;
   final bool showSuggestions;
-  final List<fm.Polygon<Object>> dangerZonePolygons;
+  final List<fm.Polygon> dangerZonePolygons;
   final String? currentAddressText; // To keep search bar text if needed
 
   const NavigationLoadSuccess({
@@ -90,16 +90,16 @@ class NavigationLoadSuccess extends NavigationState {
 
   @override
   List<Object?> get props => [
-        userPosition,
-        userHeading,
-        routePoints,
-        instructions,
-        destinationPosition,
-        suggestions,
-        showSuggestions,
-        dangerZonePolygons,
-        currentAddressText,
-      ];
+    userPosition,
+    userHeading,
+    routePoints,
+    instructions,
+    destinationPosition,
+    suggestions,
+    showSuggestions,
+    dangerZonePolygons,
+    currentAddressText,
+  ];
 
   NavigationLoadSuccess copyWith({
     LatLng? userPosition,
@@ -112,7 +112,7 @@ class NavigationLoadSuccess extends NavigationState {
     bool clearDestinationPosition = false,
     List<String>? suggestions,
     bool? showSuggestions,
-    List<fm.Polygon<Object>>? dangerZonePolygons,
+    List<fm.Polygon>? dangerZonePolygons,
     String? currentAddressText,
     bool clearCurrentAddressText = false,
   }) {
@@ -121,11 +121,15 @@ class NavigationLoadSuccess extends NavigationState {
       userHeading: userHeading ?? this.userHeading,
       routePoints: clearRoutePoints ? null : routePoints ?? this.routePoints,
       instructions: clearInstructions ? [] : instructions ?? this.instructions,
-      destinationPosition: clearDestinationPosition ? null : destinationPosition ?? this.destinationPosition,
+      destinationPosition: clearDestinationPosition
+          ? null
+          : destinationPosition ?? this.destinationPosition,
       suggestions: suggestions ?? this.suggestions,
       showSuggestions: showSuggestions ?? this.showSuggestions,
       dangerZonePolygons: dangerZonePolygons ?? this.dangerZonePolygons,
-      currentAddressText: clearCurrentAddressText ? null : currentAddressText ?? this.currentAddressText,
+      currentAddressText: clearCurrentAddressText
+          ? null
+          : currentAddressText ?? this.currentAddressText,
     );
   }
 }

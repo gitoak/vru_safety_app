@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm; // Aliased import
@@ -25,7 +24,6 @@ class _NavigationPageState extends State<NavigationPage> {
   bool _routeLoading = false;
   String? _error;
   LatLng? _userPosition;
-  double _userHeading = 0.0; // Heading from compass
   LatLng? _destinationPosition;
   final TextEditingController _addressController = TextEditingController();
   List<String> _suggestions = [];
@@ -39,9 +37,7 @@ class _NavigationPageState extends State<NavigationPage> {
   bool _mapReady = false;
   bool _compassMode = false; // Toggle for compass/navigation mode
 
-  List<fm.Polygon<Object>>
-  _dangerZonePolygons = // Explicitly type with <Object>
-      []; // Added for storing loaded danger zones
+  List<fm.Polygon> _dangerZonePolygons = []; // Corrected type
 
   List<fm.Marker> _dangerZoneMarkers = []; // Markers for danger zones
 
@@ -49,20 +45,17 @@ class _NavigationPageState extends State<NavigationPage> {
     setState(() {
       _dangerZoneMarkers = _dangerZonePolygons.map((polygon) {
         // Calculate the center of the polygon
-        final center = polygon.points.reduce((a, b) => LatLng(
-              (a.latitude + b.latitude) / 2,
-              (a.longitude + b.longitude) / 2,
-            ));
+        final center = polygon.points.reduce(
+          (a, b) => LatLng(
+            (a.latitude + b.latitude) / 2,
+            (a.longitude + b.longitude) / 2,
+          ),
+        );
 
         return fm.Marker(
-          width: 40.0,
-          height: 40.0,
           point: center,
-          child: const Icon(
-            Icons.warning,
-            color: Colors.red,
-            size: 30,
-          ),
+          builder: (ctx) =>
+              const Icon(Icons.warning, color: Colors.red, size: 30),
         );
       }).toList();
     });
@@ -71,7 +64,9 @@ class _NavigationPageState extends State<NavigationPage> {
   @override
   void initState() {
     super.initState();
-    _initializePage().then((_) => _updateDangerZoneMarkers()); // Update markers after polygons are loaded
+    _initializePage().then(
+      (_) => _updateDangerZoneMarkers(),
+    ); // Update markers after polygons are loaded
   }
 
   Future<void> _initializePage() async {
@@ -182,10 +177,7 @@ class _NavigationPageState extends State<NavigationPage> {
                     _userPosition = newPosition;
                   });
                   if (_mapReady) {
-                    _mapController.move(
-                      newPosition,
-                      _mapController.camera.zoom,
-                    );
+                    _mapController.move(newPosition, _mapController.zoom);
                   }
                   debugPrint("Live location update: $newPosition");
                 }
@@ -204,7 +196,7 @@ class _NavigationPageState extends State<NavigationPage> {
       if (mounted) {
         final heading = event.heading ?? 0.0;
         setState(() {
-          _userHeading = heading; // Always store the heading
+          // Always store the heading
         });
 
         // Removed auto-rotation logic to allow free user control
@@ -268,7 +260,7 @@ class _NavigationPageState extends State<NavigationPage> {
       final Map<String, dynamic> jsonData = json.decode(jsonString);
       final List<dynamic> features = jsonData['features'];
 
-      final List<fm.Polygon<Object>> polygons = features.map((feature) {
+      final List<fm.Polygon> polygons = features.map((feature) {
         final List<dynamic> coordinates = feature['geometry']['coordinates'][0];
         final List<LatLng> points = coordinates
             .map((coord) => LatLng(coord[1], coord[0]))
@@ -617,35 +609,13 @@ class _NavigationPageState extends State<NavigationPage> {
                       child: fm.FlutterMap(
                         mapController: _mapController,
                         options: fm.MapOptions(
-                          initialCenter: _userPosition ?? const LatLng(0, 0),
-                          initialZoom: _currentZoom,
-                          onPositionChanged:
-                              (fm.MapCamera camera, bool hasGesture) {
-                                if (hasGesture) {
-                                  if (camera.zoom != _currentZoom) {
-                                    if (mounted) {
-                                      setState(() {
-                                        _currentZoom = camera.zoom;
-                                      });
-                                    }
-                                  }
-                                }
-                              },
-                          onMapEvent: (fm.MapEvent event) {},
-                          onMapReady: () {
-                            if (mounted) {
+                          center: _userPosition ?? const LatLng(0, 0),
+                          zoom: _currentZoom,
+                          onPositionChanged: (position, hasGesture) {
+                            if (hasGesture && position.zoom != _currentZoom) {
                               setState(() {
-                                _mapReady = true;
+                                _currentZoom = position.zoom ?? 0.0;
                               });
-                              debugPrint(
-                                "Map is ready. User position: $_userPosition, Zoom: $_currentZoom",
-                              );
-                              if (_userPosition != null) {
-                                _mapController.move(
-                                  _userPosition!,
-                                  _currentZoom,
-                                );
-                              }
                             }
                           },
                         ),
@@ -655,66 +625,9 @@ class _NavigationPageState extends State<NavigationPage> {
                                 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                             subdomains: const ['a', 'b', 'c'],
                           ),
-                          if (_routePoints != null)
-                            fm.PolylineLayer(
-                              polylines: [
-                                fm.Polyline(
-                                  points: _routePoints!,
-                                  color: Colors.blue,
-                                  strokeWidth: 5.0,
-                                ),
-                              ],
-                            ),
                           if (_dangerZonePolygons.isNotEmpty)
-                            fm.PolygonLayer(
-                              polygons: _dangerZonePolygons,
-                              polygonCulling: true,
-                            ),
-                          fm.MarkerLayer(
-                            markers: [
-                              ..._dangerZoneMarkers,
-                              if (_userPosition != null)
-                                fm.Marker(
-                                  width: 60.0,
-                                  height: 60.0,
-                                  point: _userPosition!,
-                                  child: Transform.rotate(
-                                    angle: _compassMode
-                                        ? 0.0
-                                        : (_userHeading) * (math.pi / 180),
-                                    child: const Icon(
-                                      Icons.navigation,
-                                      color: Colors.blue,
-                                      size: 30,
-                                    ),
-                                  ),
-                                ),
-                              if (_destinationPosition != null)
-                                fm.Marker(
-                                  width: 60.0,
-                                  height: 60.0,
-                                  point: _destinationPosition!,
-                                  child: const Icon(
-                                    Icons.location_on,
-                                    color: Colors.red,
-                                    size: 30,
-                                  ),
-                                ),
-                              if (_routePoints != null &&
-                                  _routePoints!.isNotEmpty &&
-                                  _destinationPosition == null)
-                                fm.Marker(
-                                  width: 60.0,
-                                  height: 60.0,
-                                  point: _routePoints!.last,
-                                  child: const Icon(
-                                    Icons.flag,
-                                    color: Colors.red,
-                                    size: 30,
-                                  ),
-                                ),
-                            ],
-                          ),
+                            fm.PolygonLayer(polygons: _dangerZonePolygons),
+                          fm.MarkerLayer(markers: _dangerZoneMarkers),
                         ],
                       ),
                     ),
@@ -737,16 +650,10 @@ class _NavigationPageState extends State<NavigationPage> {
   }
 }
 
-class _InstructionBar extends StatefulWidget {
+// Moved _InstructionBar to the top level
+class _InstructionBar extends StatelessWidget {
   final List<dynamic> instructions;
   const _InstructionBar({required this.instructions});
-
-  @override
-  State<_InstructionBar> createState() => _InstructionBarState();
-}
-
-class _InstructionBarState extends State<_InstructionBar> {
-  bool expanded = false;
 
   IconData _iconForInstruction(String sign) {
     switch (sign) {
@@ -777,32 +684,26 @@ class _InstructionBarState extends State<_InstructionBar> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.instructions.isEmpty) {
+    if (instructions.isEmpty) {
       return const SizedBox.shrink();
     }
-    final visibleCount = expanded
-        ? (widget.instructions.length < 4 ? widget.instructions.length : 4)
-        : 1;
+    final visibleCount = 1;
     return Container(
       width: double.infinity,
       color: Theme.of(context).colorScheme.surfaceVariant,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
         children: [
-          for (
-            int i = 0;
-            i < visibleCount && i < widget.instructions.length;
-            i++
-          ) ...[
+          for (int i = 0; i < visibleCount && i < instructions.length; i++) ...[
             Icon(
-              _iconForInstruction('${widget.instructions[i]['sign']}'),
+              _iconForInstruction('${instructions[i]['sign']}'),
               color: Colors.white,
               size: 22,
             ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
-                '${widget.instructions[i]['text']} (${(widget.instructions[i]['distance'] as num).toStringAsFixed(0)} m)',
+                '${instructions[i]['text']} (${(instructions[i]['distance'] as num).toStringAsFixed(0)} m)',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: Colors.white),
@@ -812,10 +713,10 @@ class _InstructionBarState extends State<_InstructionBar> {
             if (i < visibleCount - 1) const SizedBox(width: 16),
           ],
           const Spacer(),
-          if (widget.instructions.length > 1)
+          if (instructions.length > 1)
             TextButton(
-              onPressed: () => setState(() => expanded = !expanded),
-              child: Text(expanded ? 'Weniger' : 'Mehr'),
+              onPressed: () {},
+              child: Text('Mehr'),
               style: TextButton.styleFrom(foregroundColor: Colors.white),
             ),
         ],

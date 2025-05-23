@@ -73,7 +73,7 @@ class NavigationLoadSuccess extends NavigationState {
   final LatLng? destinationPosition;
   final List<String> suggestions;
   final bool showSuggestions;
-  final List<fm.Polygon<Object>> dangerZonePolygons;
+  final List<fm.Polygon> dangerZonePolygons;
   final String? currentAddressText; // To keep search bar text if needed
 
   const NavigationLoadSuccess({
@@ -112,7 +112,7 @@ class NavigationLoadSuccess extends NavigationState {
     bool clearDestinationPosition = false,
     List<String>? suggestions,
     bool? showSuggestions,
-    List<fm.Polygon<Object>>? dangerZonePolygons,
+    List<fm.Polygon>? dangerZonePolygons,
     String? currentAddressText,
     bool clearCurrentAddressText = false,
   }) {

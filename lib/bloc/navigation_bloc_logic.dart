@@ -171,9 +171,9 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   }
 
   // Placeholder for danger zone loading logic
-  List<fm.Polygon<Object>> _loadFallbackDangerZones() {
+  List<fm.Polygon> _loadFallbackDangerZones() {
     return [
-      fm.Polygon<Object>(
+      fm.Polygon(
         points: [
           const LatLng(49.010, 12.098),
           const LatLng(49.019, 12.098),

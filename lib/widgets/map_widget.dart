@@ -8,10 +8,10 @@ class MapWidget extends StatelessWidget {
   final LatLng? userPosition;
   final double currentZoom;
   final List<LatLng>? routePoints;
-  final List<fm.Polygon<Object>> dangerZonePolygons;
+  final List<fm.Polygon> dangerZonePolygons;
   final double userHeading;
   final LatLng? destinationPosition;
-  final Function(fm.MapCamera, bool) onPositionChanged;
+  final Function(fm.MapPosition, bool) onPositionChanged;
   final VoidCallback onMapReady;
 
   const MapWidget({
@@ -32,8 +32,8 @@ class MapWidget extends StatelessWidget {
     return fm.FlutterMap(
       mapController: mapController,
       options: fm.MapOptions(
-        initialCenter: userPosition ?? const LatLng(0, 0),
-        initialZoom: currentZoom,
+        center: userPosition ?? const LatLng(0, 0),
+        zoom: currentZoom,
         onPositionChanged: onPositionChanged,
         onMapReady: onMapReady,
       ),
@@ -60,7 +60,7 @@ class MapWidget extends StatelessWidget {
         else // Fallback if no danger zones are loaded (optional)
           fm.PolygonLayer(
             polygons: [
-              fm.Polygon<Object>(
+              fm.Polygon(
                 points: [
                   const LatLng(49.010, 12.098),
                   const LatLng(49.019, 12.098),
@@ -81,7 +81,7 @@ class MapWidget extends StatelessWidget {
                 width: 60.0,
                 height: 60.0,
                 point: userPosition!,
-                child: Transform.rotate(
+                builder: (context) => Transform.rotate(
                   angle: (userHeading) * (math.pi / 180),
                   child: const Icon(
                     Icons.navigation,
@@ -95,7 +95,7 @@ class MapWidget extends StatelessWidget {
                 width: 60.0,
                 height: 60.0,
                 point: destinationPosition!,
-                child: const Icon(
+                builder: (context) => const Icon(
                   Icons.location_on,
                   color: Colors.red,
                   size: 30,
@@ -108,7 +108,7 @@ class MapWidget extends StatelessWidget {
                 width: 60.0,
                 height: 60.0,
                 point: routePoints!.last,
-                child: const Icon(
+                builder: (context) => const Icon(
                   Icons.flag,
                   color: Colors.red,
                   size: 30,
