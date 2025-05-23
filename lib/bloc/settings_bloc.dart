@@ -21,12 +21,15 @@ class SetApiData extends SettingsEvent {
 
 class LoadSettings extends SettingsEvent {}
 
+class ResetOnboarding extends SettingsEvent {}
+
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   SettingsBloc() : super(const SettingsState()) {
     on<LoadSettings>(_onLoadSettings);
     on<SetVruCategory>(_onSetVruCategory);
     on<SetEmergencyContact>(_onSetEmergencyContact);
     on<SetApiData>(_onSetApiData);
+    on<ResetOnboarding>(_onResetOnboarding);
     add(LoadSettings());
   }
 
@@ -58,5 +61,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('apiData', event.data);
     emit(state.copyWith(apiData: event.data));
+  }
+
+  Future<void> _onResetOnboarding(ResetOnboarding event, Emitter<SettingsState> emit) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboardingComplete', false);
+    // Optionally, you could also reset other settings here if desired
+    // For example, to clear the selected category and contact:
+    // await prefs.remove('vruCategory');
+    // await prefs.remove('emergencyContact');
+    // emit(state.copyWith(vruCategory: null, emergencyContact: null, onboardingComplete: false));
+    // For now, just resetting the flag is sufficient as per the request.
   }
 }

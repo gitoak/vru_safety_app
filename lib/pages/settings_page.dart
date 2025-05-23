@@ -59,30 +59,26 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 24),
                 const Text('Impairment Category', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                // Replaced DecoratedBox and DropdownButton with DropdownButtonFormField
+                DropdownButtonFormField<VruCategory>(
+                  value: state.vruCategory,
+                  hint: const Text('Select impairment'),
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    // Using default InputDecoration to pick up theme styles
+                    // border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), // Already handled by theme
+                    // fillColor: Colors.grey[100], // Removed to use theme default
+                    // filled: true, // Already handled by theme
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: DropdownButton<VruCategory>(
-                      isExpanded: true,
-                      value: state.vruCategory,
-                      hint: const Text('Select impairment'),
-                      underline: const SizedBox(),
-                      items: VruCategory.values.map((cat) => DropdownMenuItem(
-                        value: cat,
-                        child: Text(_categoryLabel(cat)),
-                      )).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          context.read<SettingsBloc>().add(SetVruCategory(val));
-                        }
-                      },
-                    ),
-                  ),
+                  items: VruCategory.values.map((cat) => DropdownMenuItem(
+                    value: cat,
+                    child: Text(_categoryLabel(cat)),
+                  )).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      context.read<SettingsBloc>().add(SetVruCategory(val));
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
                 // Emergency Contact Section
@@ -94,9 +90,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     hintText: 'Enter phone number',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    fillColor: Colors.grey[100],
-                    filled: true,
+                    // Removed fillColor and filled to use theme defaults
+                    // Removed explicit border to use theme's default OutlineInputBorder
+                    // border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    // fillColor: Colors.grey[100],
+                    // filled: true,
                   ),
                   onFieldSubmitted: (val) {
                     context.read<SettingsBloc>().add(SetEmergencyContact(val));
@@ -151,6 +149,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 32),
                 // Add more settings here if needed
+
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Developer Options',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text('Reset Onboarding (Dev)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent, // Or any color that stands out
+                    minimumSize: const Size(180, 40),
+                  ),
+                  onPressed: () async {
+                    // This button is for development/testing purposes
+                    final bloc = context.read<SettingsBloc>();
+                    bloc.add(ResetOnboarding()); // Assuming you'll add this event
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Onboarding reset. Restart the app to see changes.')),
+                    );
+                  },
+                ),
               ],
             ),
           ),
