@@ -10,14 +10,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import './danger_zone_alert_system.dart';
 
-class GraphHopperPocPage extends StatefulWidget {
-  const GraphHopperPocPage({super.key});
+class NavigationPage extends StatefulWidget {
+  const NavigationPage({super.key});
 
   @override
-  State<GraphHopperPocPage> createState() => _GraphHopperPocPageState();
+  State<NavigationPage> createState() => _NavigationPageState();
 }
 
-class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
+class _NavigationPageState extends State<NavigationPage> {
   List<LatLng>? _routePoints;
   bool _pageLoading = true;
   bool _routeLoading = false;
@@ -499,7 +499,9 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Graph Hopper POC (Live)')),
+      appBar: AppBar(
+        title: const Text('Navigation'), // Changed title from old one to 'Navigation'
+      ),
       body: _pageLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
