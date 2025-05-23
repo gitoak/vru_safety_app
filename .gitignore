@@ -43,9 +43,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-/Unfallatlas/venv/
-/Unfallatlas/Unfallorte2023_EPSG25832_Shape/
-/Unfallatlas/Unfallorte2023_EPSG25832_CSV/
-/Unfallatlas/Regensburg-shp/
-/Unfallatlas/oberpfalz-latest-free.shp/
