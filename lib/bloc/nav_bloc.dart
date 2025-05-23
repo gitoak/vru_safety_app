@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
 // Navigation destinations
-enum AppPage { home, settings, sandbox }
+enum AppPage { placeholder, navigation, settings }
 
 // Events
 abstract class NavEvent extends Equatable {
@@ -65,7 +65,7 @@ class NavState extends Equatable {
 
 // Bloc
 class NavBloc extends Bloc<NavEvent, NavState> {
-  NavBloc() : super(const NavState(mainPage: AppPage.home)) {
+  NavBloc() : super(const NavState(mainPage: AppPage.placeholder)) {
     on<NavTo>(_onNavTo);
     on<NavPushSubPage>(_onNavPushSubPage);
     on<NavPopSubPage>(_onNavPopSubPage);
