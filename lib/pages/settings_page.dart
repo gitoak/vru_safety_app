@@ -41,6 +41,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Define a minimum size for tap targets
+    const minButtonSize = Size(48, 48);
+    // Define a style for ElevatedButton to ensure minimum tap target size
+    final ButtonStyle minSizeButtonStyle = ElevatedButton.styleFrom(
+      minimumSize: minButtonSize,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Ensure padding contributes to size
+    );
+
     return BlocConsumer<SettingsBloc, SettingsState>(
       listenWhen: (prev, curr) => prev.emergencyContact != curr.emergencyContact,
       listener: (context, state) {
@@ -90,6 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     hintText: 'Enter phone number',
+                    labelText: 'Emergency Contact Number', // Added labelText
                     // Removed fillColor and filled to use theme defaults
                     // Removed explicit border to use theme's default OutlineInputBorder
                     // border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -111,9 +120,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 32),
                 // Permissions Management Button
                 ElevatedButton.icon(
+                  style: minSizeButtonStyle, // Apply the style
                   icon: const Icon(Icons.security),
                   label: const Text('Manage Permissions'),
-                  style: ElevatedButton.styleFrom(minimumSize: Size(180, 40)),
                   onPressed: () {
                     // TODO: Implement permissions management
                     showDialog(
@@ -131,9 +140,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 24),
                 // About & Feedback Button
                 ElevatedButton.icon(
+                  style: minSizeButtonStyle, // Apply the style
                   icon: const Icon(Icons.info_outline),
                   label: const Text('About & Feedback'),
-                  style: ElevatedButton.styleFrom(minimumSize: Size(180, 40)),
                   onPressed: () {
                     showAboutDialog(
                       context: context,
@@ -158,12 +167,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
+                  style: minSizeButtonStyle, // Apply the style
                   icon: const Icon(Icons.replay_outlined),
                   label: const Text('Reset Onboarding (Dev)'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent, // Or any color that stands out
-                    minimumSize: const Size(180, 40),
-                  ),
                   onPressed: () async {
                     // This button is for development/testing purposes
                     final bloc = context.read<SettingsBloc>();
