@@ -167,9 +167,9 @@ class _NavigationPageState extends State<NavigationPage> {
           _userHeading = heading; // Always store the heading
         });
 
-        // Rotate the map to match the user's heading with a 180° correction
+        // Rotate the map to match the user's heading
         if (_mapReady && _userPosition != null) {
-          _mapController.rotate(-heading + 180.0); // Ensure the arrow points up
+          _mapController.rotate(-heading); // Ensure the arrow points up
         }
       }
     });
