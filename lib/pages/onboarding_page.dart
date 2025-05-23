@@ -36,14 +36,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
     });
   }
 
-  void _finishOnboarding() { // Removed async, as SharedPreferences calls are removed
+  void _finishOnboarding() {
     if (_selectedCategory != null) {
       context.read<SettingsBloc>().add(SetVruCategory(_selectedCategory!));
     }
     context.read<SettingsBloc>().add(SetEmergencyContact(_contactController.text));
-    // SharedPreferences update and navigation/state change are handled by the onFinish callback in main.dart
     if (widget.onFinish != null) widget.onFinish!();
-    // Navigator.of(context).pop(); // Removed: Not suitable for this page's presentation
   }
 
   String _getCategoryLabel(VruCategory cat) {
@@ -51,166 +49,196 @@ class _OnboardingPageState extends State<OnboardingPage> {
       case VruCategory.blind:
         return 'Blind';
       case VruCategory.visuallyImpaired:
-        return 'Visually Impaired';
-      // Removed redundant default case as all enum values are handled
+        return 'Visually Impaired (e.g., low vision)';
     }
   }
 
   Widget _buildIntro() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('Welcome to VRU Safety App!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        const Text('This app helps you stay safe as a vulnerable road user.'),
-        const SizedBox(height: 32),
-        ElevatedButton(
-          onPressed: _nextStep,
-          child: const Text('Next'),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        key: const ValueKey('intro'), // For AnimatedSwitcher
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Welcome to VRU Safety',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'This app helps you navigate more safely. Let\'s get you set up.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _nextStep,
+            style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('Get Started'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildCategory() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Select your impairment category', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<VruCategory>(
-          value: _selectedCategory,
-          isExpanded: true,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
-          items: VruCategory.values.map((cat) => DropdownMenuItem(
-            value: cat,
-            child: Text(_getCategoryLabel(cat)), // Use the helper function here
-          )).toList(),
-          onChanged: (val) => setState(() => _selectedCategory = val),
-        ),
-        const SizedBox(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton(
-              onPressed: () => setState(() => _step = 0),
-              child: const Text('Back'),
-            ),
-            ElevatedButton(
-              onPressed: _selectedCategory != null ? _nextStep : null,
-              child: const Text('Next'),
-            ),
-          ],
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        key: const ValueKey('category'), // For AnimatedSwitcher
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Tell Us About Yourself',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ...VruCategory.values.map((cat) => RadioListTile<VruCategory>(
+                title: Text(_getCategoryLabel(cat)),
+                value: cat,
+                groupValue: _selectedCategory,
+                onChanged: (VruCategory? value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedCategory = value;
+                    });
+                    context.read<SettingsBloc>().add(SetVruCategory(value));
+                  }
+                },
+              )),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _selectedCategory != null ? _nextStep : null,
+            style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('Next'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildContact() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Set your emergency contact number', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _contactController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            hintText: 'Enter phone number',
-            border: OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Emergency Contact',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
-        ),
-        const SizedBox(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton(
-              onPressed: () => setState(() => _step = 1),
-              child: const Text('Back'),
+          const SizedBox(height: 16),
+          const Text(
+            'Please enter the phone number of an emergency contact.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          TextFormField(
+            controller: _contactController,
+            decoration: const InputDecoration(
+              labelText: 'Emergency Contact Phone Number', // Added labelText
+              hintText: 'Enter phone number',
+              border: OutlineInputBorder(),
             ),
-            ElevatedButton(
-              onPressed: () => _nextStep(),
-              child: const Text('Next'),
-            ),
-          ],
-        ),
-      ],
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _nextStep,
+            style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('Next'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPermissions() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Permissions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        const Text('To function properly, the app needs access to your location.'),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () async {
-            // Request location permission
-            // (You can use Geolocator.requestPermission() here if needed)
-            _nextStep();
-          },
-          child: const Text('Grant Location Permission'),
-        ),
-        const SizedBox(height: 32),
-        TextButton(
-          onPressed: () => setState(() => _step = 2),
-          child: const Text('Back'),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Location Permissions',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'This app requires access to your location to provide safety alerts and navigation assistance.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _nextStep,
+            style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('Grant Permissions (Placeholder)'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildFinish() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('Setup Complete!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        const Text('You can change your settings at any time.'),
-        const SizedBox(height: 32),
-        ElevatedButton(
-          onPressed: _finishOnboarding,
-          child: const Text('Finish'),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "You're All Set!",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Thank you for setting up the VRU Safety App.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _finishOnboarding,
+            style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('Finish Setup'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget content;
+    Widget currentPage;
     switch (_step) {
       case 0:
-        content = _buildIntro();
+        currentPage = _buildIntro();
         break;
       case 1:
-        content = _buildCategory();
+        currentPage = _buildCategory();
         break;
       case 2:
-        content = _buildContact();
+        currentPage = _buildContact();
         break;
       case 3:
-        content = _buildPermissions();
+        currentPage = _buildPermissions();
+        break;
+      case 4:
+        currentPage = _buildFinish();
         break;
       default:
-        content = _buildFinish();
+        currentPage = _buildIntro();
     }
+
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: content,
-            ),
-          ),
-        ),
+      appBar: AppBar(
+        title: Text('Setup - Step ${_step + 1} of 5'),
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: currentPage,
       ),
     );
   }
