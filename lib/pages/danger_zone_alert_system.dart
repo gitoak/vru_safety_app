@@ -6,6 +6,8 @@ import 'package:vibration/vibration.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
+import 'dart:async'; // Added for Timer
+import 'package:audioplayers/audioplayers.dart'; // Added for custom sound
 
 // TOP-LEVEL FUNCTION FOR BACKGROUND NOTIFICATION TAPS
 @pragma('vm:entry-point')
@@ -33,12 +35,42 @@ class DangerZoneAlertSystem extends StatefulWidget {
 class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
   bool _alerted = false;
   FlutterLocalNotificationsPlugin? _notifications;
+  Position? _currentPosition; // To store the latest known position
+  Timer? _dangerCheckTimer; // Timer for periodic checks
+  AudioPlayer _audioPlayer = AudioPlayer(); // Added AudioPlayer instance
 
   @override
   void initState() {
     super.initState();
-    _initializeAndRequestPermissions();
-    _startLocationMonitoring();
+    _initializeAudioPlayer(); // Initialize AudioPlayer settings
+    _initializeAndRequestPermissions(); // Ensure permissions are requested
+    _startLocationUpdatesAndPeriodicChecks(); // Start location updates and periodic checks
+  }
+
+  Future<void> _initializeAudioPlayer() async {
+    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    // Optional: Set player mode if low latency is critical and available.
+    // await _audioPlayer.setPlayerMode(PlayerMode.lowLatency);
+    debugPrint("AudioPlayer initialized with ReleaseMode.stop");
+
+    // Preload the sound if possible and desired, though play() will also load it.
+    // await _audioPlayer.setSource(AssetSource('sounds/warning_alarm.mp3'));
+    // debugPrint("AudioPlayer source set to warning_alarm.mp3");
+
+    _audioPlayer.onPlayerStateChanged.listen((PlayerState s) {
+      debugPrint('Current player state: $s');
+    });
+    _audioPlayer.onLog.listen((String log) {
+      debugPrint('AudioPlayer Log: $log');
+    });
+
+  }
+
+  @override
+  void dispose() {
+    _dangerCheckTimer?.cancel(); // Cancel the timer when the widget is disposed
+    _audioPlayer.dispose(); // Dispose of the audio player
+    super.dispose();
   }
 
   // Handler for when a notification is tapped (app in foreground or background)
@@ -49,7 +81,7 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
       'Notification Tapped (Foreground/Background): ID(${notificationResponse.id}), Payload: ${notificationResponse.payload}',
     );
     // TODO: Implement navigation or other logic based on the notification payload.
-    // Example: if (notificationResponse.payload == 'some_route') { Navigator.push(...); }
+    // Example: if (notificationResponse.payload == 'some_route') { Navigator.push(...); }\r
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -93,7 +125,7 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
         DarwinInitializationSettings(
           requestAlertPermission: true,
           requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestSoundPermission: true, // Request general sound permission for app
         );
 
     await _notifications!.initialize(
@@ -109,19 +141,19 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
     // Create notification channel (Android) - THIS IS CRUCIAL
     // If you change channel settings, YOU MUST UNINSTALL AND REINSTALL THE APP on Android.
     await androidImplementation?.createNotificationChannel(
-      AndroidNotificationChannel(
-        'danger_zone',
-        'Gefahrenzonen',
-        description: 'Warnungen bei Annäherung an Gefahrenzonen',
+      const AndroidNotificationChannel(
+        'danger_zone_channel_v1', // Updated Channel ID
+        'Gefahrenzonen Warnungen', // Updated Name for clarity
+        description: 'Benachrichtigungen für Gefahrenzonen und Sicherheitswarnungen', // Updated description
         importance:
             Importance.max, // Ensure this is MAX for heads-up notification
-        playSound: true,
-        enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
+        playSound: false, // Set to false as sound is handled manually
+        enableVibration: false, // Set to false as vibration is handled manually
+        vibrationPattern: null, // Set to null as vibration is handled manually
         showBadge: true,
       ),
     );
-    debugPrint("Android notification channel created/updated.");
+    debugPrint("Android notification channel 'danger_zone_channel_v1' created/updated.");
 
     // Request location permission
     LocationPermission locationPermission =
@@ -145,94 +177,164 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
       return;
     }
     try {
-      debugPrint('Attempting to show danger notifications...');
-      // Main warning notification
+      debugPrint('Attempting to show danger notification with manual sound and vibration...');
+      
+      // 1. Play custom sound
+      try {
+        // Ensure any previous sound is stopped before playing a new one.
+        await _audioPlayer.stop(); 
+        await _audioPlayer.play(AssetSource('sounds/warning_alarm.mp3'));
+        debugPrint("Custom warning sound playback initiated via AssetSource.");
+      } catch (e) {
+        debugPrint("Error playing sound: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error playing sound: $e')),
+          );
+        }
+      }
+
+      // 2. Trigger custom vibration
+      try {
+        bool? hasVibrator = await Vibration.hasVibrator();
+        if (hasVibrator ?? false) {
+          // Pattern: vibrate 500ms, pause 200ms, vibrate 500ms. Intensities for Android.
+          // iOS does not support custom patterns or intensities via this plugin, it will be a default vibration.
+          Vibration.vibrate(pattern: [0, 500, 200, 500], intensities: [0, 128, 0, 128]); 
+          debugPrint("Custom vibration initiated.");
+        } else {
+          debugPrint("Device does not have a vibrator.");
+        }
+      } catch (e) {
+        debugPrint("Error triggering vibration: $e");
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error triggering vibration: $e')),
+          );
+        }
+      }
+
+      // 3. Show the notification (configured for no default sound/vibration)
       await _notifications!.show(
-        0,
+        0, // Notification ID
         'Warnung: Gefahrenzone',
         'Sie befinden sich in der Nähe einer Gefahrenzone!',
-        NotificationDetails(
+        const NotificationDetails(
           android: AndroidNotificationDetails(
-            'danger_zone',
-            'Gefahrenzonen',
-            channelDescription: 'Warnungen bei Annäherung an Gefahrenzonen',
+            'danger_zone_channel_v1', // Use the updated Channel ID
+            'Gefahrenzonen Warnungen', // Match channel name
+            channelDescription: 'Benachrichtigungen für Gefahrenzonen und Sicherheitswarnungen', // Match channel desc
             importance: Importance.max,
             priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-            vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
+            playSound: false, // Explicitly false
+            enableVibration: false, // Explicitly false
+            vibrationPattern: null, // Explicitly null
             ticker: 'Gefahrenzone',
           ),
-          iOS: DarwinNotificationDetails(presentSound: true),
+          iOS: DarwinNotificationDetails(
+            presentSound: false, // Explicitly false for iOS sound
+            presentAlert: true,  // Show alert
+            presentBadge: true,  // Update badge
+          ),
         ),
+        payload: 'danger_zone_alert_payload_${DateTime.now().millisecondsSinceEpoch}' // Example payload
       );
-      debugPrint('notification sent');
-      // Show a SnackBar as a fallback to confirm the button works
+      debugPrint('Notification sent via channel danger_zone_channel_v1.');
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Testbenachrichtigung ausgelöst (siehe Debug-Konsole)',
+              'Gefahrenwarnung ausgelöst (Benachrichtigung, Ton, Vibration)!', // Updated message
             ),
+            duration: Duration(seconds: 3),
           ),
         );
       }
-    } catch (e) {
-      debugPrint('Notification error: $e');
+    } catch (e, s) {
+      debugPrint('Error in _showDangerNotification: $e');
+      debugPrint('Stack trace for _showDangerNotification error: $s');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fehler beim Senden der Benachrichtigung: $e'),
+            content: Text('Fehler beim Anzeigen der Gefahrenwarnung: $e'),
           ),
         );
       }
     }
   }
 
-  void _startLocationMonitoring() async {
+  void _startLocationUpdatesAndPeriodicChecks() async {
+    // Start listening to position updates
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
+        distanceFilter: 5, // Update position if moved by 5 meters
       ),
-    ).listen((Position pos) async {
-      final user = LatLng(pos.latitude, pos.longitude);
-      // Call external API to check if user should be warned (GET version)
-      final shouldWarn = await _checkShouldWarn(user);
-      if (shouldWarn && !_alerted) {
-        _alerted = true;
-        _showDangerNotification();
-      } else if (!shouldWarn) {
-        _alerted = false;
+    ).listen((Position pos) {
+      if (mounted) {
+        setState(() {
+          _currentPosition = pos;
+        });
+        // Optional: Trigger an immediate check on significant location change if desired,
+        // but the timer will handle periodic checks anyway.
+        // _performDangerCheck(); 
       }
+    }, onError: (error) {
+      debugPrint("Error getting location stream: $error");
+      // Handle location stream errors if necessary
     });
+
+    // Start the periodic timer for danger checks
+    _dangerCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _performDangerCheck();
+    });
+  }
+
+  Future<void> _performDangerCheck() async {
+    if (_currentPosition == null) {
+      debugPrint("No current location available to check for danger.");
+      return;
+    }
+
+    final userLocation = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+    final shouldWarn = await _checkShouldWarn(userLocation);
+
+    if (mounted) { // Check if the widget is still in the tree
+      if (shouldWarn && !_alerted) {
+        setState(() {
+          _alerted = true;
+        });
+        _showDangerNotification();
+      } else if (!shouldWarn && _alerted) { // Only reset if it was previously alerted
+        setState(() {
+          _alerted = false;
+        });
+        debugPrint("Danger condition cleared. Alerted state reset.");
+      }
+    }
   }
 
   Future<bool> _checkShouldWarn(LatLng user) async {
     try {
-      // final uri = Uri.parse(
-      //   'https://vruapi.jannik.dev/is_dangerous_road_nearby?coord=${user.latitude},${user.longitude}',
-      // );
       final uri = Uri.parse(
         'https://vruapi.jannik.dev/is_dangerous_road_nearby?coord=${user.latitude},${user.longitude}',
       );
       debugPrint('Checking danger status with API: $uri'); // Log the URI
 
-      final resp = await http.get(uri).timeout(const Duration(seconds: 5));
+      final resp = await http.get(uri).timeout(const Duration(seconds: 10)); // Increased timeout
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         debugPrint('API Response Data: $data'); // Log the full API response
 
-        if (data['success'] == true) {
-          debugPrint(data);
-          // Expecting { success: true/false, dangerous_roads_nearby: true/false }
+        if (data['success'] == true && data.containsKey('dangerous_roads_nearby')) {
           return data['dangerous_roads_nearby'] == true;
         } else {
           debugPrint(
-            'API call successful but operation failed: ${data['message'] ?? 'No error message provided.'}',
+            'API call successful but data format unexpected or operation failed: ${data['message'] ?? 'No error message provided.'}',
           );
-          return false; // API indicated failure
+          return false; 
         }
       } else {
         debugPrint(
@@ -247,16 +349,33 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
   }
 
   void _simulateDanger() {
-    _showDangerNotification();
+    debugPrint("Simulate danger button pressed. Current alerted state: $_alerted");
+    // This directly triggers the notification, sound, and vibration for testing purposes.
+    _showDangerNotification(); 
+    
+    // If you want the test button to also toggle the _alerted state for UI consistency (optional):
+    // if (mounted) {
+    //   setState(() {
+    //     _alerted = true; 
+    //   });
+    // }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: ElevatedButton(
-        onPressed: _simulateDanger,
-        child: const Text('Gefahrenzone-Testbenachrichtigung'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton(
+            onPressed: _simulateDanger,
+            child: const Text('Gefahrenzone-Testbenachrichtigung'),
+          ),
+          if (_currentPosition != null) 
+            Text('Aktuelle Position: ${_currentPosition!.latitude.toStringAsFixed(5)}, ${_currentPosition!.longitude.toStringAsFixed(5)}'),
+          Text(_alerted ? 'WARNUNG AKTIV' : 'Keine Warnung', style: TextStyle(color: _alerted ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
