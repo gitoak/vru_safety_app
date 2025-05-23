@@ -44,6 +44,7 @@ dependencies:
   accessibility_tools: ^2.6.0
   cupertino_icons: ^1.0.8
   shapefile: ^1.0.1
+  rxdart: ^0.27.0
 
 dev_dependencies:
   flutter_test:
