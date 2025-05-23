@@ -589,134 +589,142 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                   )
                 else
                   Expanded(
-                    child: fm.FlutterMap(
-                      // Use fm. alias
-                      mapController: _mapController,
-                      options: fm.MapOptions(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 80.0,
+                      ), // Add padding to avoid overlap with FloatingActionButton
+                      child: fm.FlutterMap(
                         // Use fm. alias
-                        initialCenter: _userPosition ?? const LatLng(0, 0),
-                        initialZoom: _currentZoom,
-                        onPositionChanged:
-                            (fm.MapCamera camera, bool hasGesture) {
-                              // Use fm. alias
-                              if (hasGesture) {
-                                if (camera.zoom != _currentZoom) {
-                                  if (mounted) {
-                                    setState(() {
-                                      _currentZoom = camera.zoom;
-                                    });
+                        mapController: _mapController,
+                        options: fm.MapOptions(
+                          // Use fm. alias
+                          initialCenter: _userPosition ?? const LatLng(0, 0),
+                          initialZoom: _currentZoom,
+                          onPositionChanged:
+                              (fm.MapCamera camera, bool hasGesture) {
+                                // Use fm. alias
+                                if (hasGesture) {
+                                  if (camera.zoom != _currentZoom) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _currentZoom = camera.zoom;
+                                      });
+                                    }
                                   }
                                 }
+                              },
+                          onMapEvent: (fm.MapEvent event) {
+                            // Use fm. alias
+                            // Can listen to other map events if needed
+                          },
+                          onMapReady: () {
+                            if (mounted) {
+                              setState(() {
+                                _mapReady = true;
+                              });
+                              debugPrint(
+                                "Map is ready. User position: $_userPosition, Zoom: $_currentZoom",
+                              );
+                              if (_userPosition != null) {
+                                _mapController.move(
+                                  _userPosition!,
+                                  _currentZoom,
+                                );
                               }
-                            },
-                        onMapEvent: (fm.MapEvent event) {
-                          // Use fm. alias
-                          // Can listen to other map events if needed
-                        },
-                        onMapReady: () {
-                          if (mounted) {
-                            setState(() {
-                              _mapReady = true;
-                            });
-                            debugPrint(
-                              "Map is ready. User position: $_userPosition, Zoom: $_currentZoom",
-                            );
-                            if (_userPosition != null) {
-                              _mapController.move(_userPosition!, _currentZoom);
                             }
-                          }
-                        },
-                      ),
-                      children: [
-                        fm.TileLayer(
-                          urlTemplate:
-                              'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          subdomains: const ['a', 'b', 'c'],
+                          },
                         ),
-                        if (_routePoints != null)
-                          fm.PolylineLayer(
-                            polylines: [
-                              fm.Polyline(
-                                points: _routePoints!,
-                                color: Colors.blue,
-                                strokeWidth: 5.0,
-                              ),
-                            ],
+                        children: [
+                          fm.TileLayer(
+                            urlTemplate:
+                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            subdomains: const ['a', 'b', 'c'],
                           ),
-                        if (_dangerZonePolygons.isNotEmpty)
-                          fm.PolygonLayer(
-                            polygons: _dangerZonePolygons,
-                            polygonCulling: true,
-                          )
-                        else
-                          fm.PolygonLayer(
-                            // Fallback
-                            polygons: [
-                              fm.Polygon<Object>(
-                                // Explicitly type with <Object>
-                                points: [
-                                  const LatLng(49.010, 12.098),
-                                  const LatLng(49.019, 12.098),
-                                  const LatLng(49.019, 12.102),
-                                  const LatLng(49.010, 12.102),
-                                  const LatLng(49.010, 12.098),
-                                ],
-                                color: Colors.orange.withOpacity(
-                                  0.3,
-                                ), // Fill color
-                                borderColor: Colors.orange,
-                                borderStrokeWidth:
-                                    3.0, // Explicit double, no isFilled/filled
-                              ),
-                            ],
-                          ),
-                        fm.MarkerLayer(
-                          // Use fm. alias
-                          markers: [
-                            if (_userPosition != null)
-                              fm.Marker(
-                                // Use fm. alias
-                                width: 60.0,
-                                height: 60.0,
-                                point: _userPosition!,
-                                child: Transform.rotate(
-                                  angle: (_userHeading) * (math.pi / 180),
+                          if (_routePoints != null)
+                            fm.PolylineLayer(
+                              polylines: [
+                                fm.Polyline(
+                                  points: _routePoints!,
+                                  color: Colors.blue,
+                                  strokeWidth: 5.0,
+                                ),
+                              ],
+                            ),
+                          if (_dangerZonePolygons.isNotEmpty)
+                            fm.PolygonLayer(
+                              polygons: _dangerZonePolygons,
+                              polygonCulling: true,
+                            )
+                          else
+                            fm.PolygonLayer(
+                              // Fallback
+                              polygons: [
+                                fm.Polygon<Object>(
+                                  // Explicitly type with <Object>
+                                  points: [
+                                    const LatLng(49.010, 12.098),
+                                    const LatLng(49.019, 12.098),
+                                    const LatLng(49.019, 12.102),
+                                    const LatLng(49.010, 12.102),
+                                    const LatLng(49.010, 12.098),
+                                  ],
+                                  color: Colors.orange.withOpacity(
+                                    0.3,
+                                  ), // Fill color
+                                  borderColor: Colors.orange,
+                                  borderStrokeWidth:
+                                      3.0, // Explicit double, no isFilled/filled
+                                ),
+                              ],
+                            ),
+                          fm.MarkerLayer(
+                            // Use fm. alias
+                            markers: [
+                              if (_userPosition != null)
+                                fm.Marker(
+                                  // Use fm. alias
+                                  width: 60.0,
+                                  height: 60.0,
+                                  point: _userPosition!,
+                                  child: Transform.rotate(
+                                    angle: (_userHeading) * (math.pi / 180),
+                                    child: const Icon(
+                                      Icons.navigation,
+                                      color: Colors.blue,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
+                              if (_destinationPosition != null)
+                                fm.Marker(
+                                  // Use fm. alias
+                                  width: 60.0,
+                                  height: 60.0,
+                                  point: _destinationPosition!,
                                   child: const Icon(
-                                    Icons.navigation,
-                                    color: Colors.blue,
+                                    Icons.location_on,
+                                    color: Colors.red,
                                     size: 30,
                                   ),
                                 ),
-                              ),
-                            if (_destinationPosition != null)
-                              fm.Marker(
-                                // Use fm. alias
-                                width: 60.0,
-                                height: 60.0,
-                                point: _destinationPosition!,
-                                child: const Icon(
-                                  Icons.location_on,
-                                  color: Colors.red,
-                                  size: 30,
+                              if (_routePoints != null &&
+                                  _routePoints!.isNotEmpty &&
+                                  _destinationPosition == null)
+                                fm.Marker(
+                                  // Use fm. alias
+                                  width: 60.0,
+                                  height: 60.0,
+                                  point: _routePoints!.last,
+                                  child: const Icon(
+                                    Icons.flag,
+                                    color: Colors.red,
+                                    size: 30,
+                                  ),
                                 ),
-                              ),
-                            if (_routePoints != null &&
-                                _routePoints!.isNotEmpty &&
-                                _destinationPosition == null)
-                              fm.Marker(
-                                // Use fm. alias
-                                width: 60.0,
-                                height: 60.0,
-                                point: _routePoints!.last,
-                                child: const Icon(
-                                  Icons.flag,
-                                  color: Colors.red,
-                                  size: 30,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
               ],

@@ -30,18 +30,32 @@ class MainTabPage<T> extends Page<T> {
   Route<T> createRoute(BuildContext context) {
     return PageRouteBuilder<T>(
       settings: this,
-      pageBuilder: (BuildContext context, Animation<double> animation,
-          Animation<double> secondaryAnimation) {
-        return child;
-      },
-      transitionDuration: const Duration(milliseconds: 200), // Adjust duration as needed
-      transitionsBuilder: (BuildContext context, Animation<double> animation,
-          Animation<double> secondaryAnimation, Widget child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-          child: child,
-        );
-      },
+      pageBuilder:
+          (
+            BuildContext context,
+            Animation<double> animation,
+            Animation<double> secondaryAnimation,
+          ) {
+            return child;
+          },
+      transitionDuration: const Duration(
+        milliseconds: 200,
+      ), // Adjust duration as needed
+      transitionsBuilder:
+          (
+            BuildContext context,
+            Animation<double> animation,
+            Animation<double> secondaryAnimation,
+            Widget child,
+          ) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              ),
+              child: child,
+            );
+          },
     );
   }
 }
@@ -142,7 +156,8 @@ class AppPath {
   AppPath(this.mainPage, [this.subPageStack = const []]);
 
   bool get hasSubPages => subPageStack.isNotEmpty;
-  String? get currentSubPage => subPageStack.isNotEmpty ? subPageStack.last : null;
+  String? get currentSubPage =>
+      subPageStack.isNotEmpty ? subPageStack.last : null;
 
   static AppPath home = AppPath(AppPage.home);
   static AppPath settings = AppPath(AppPage.settings);
@@ -191,12 +206,15 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
 
     // Add the main page (which includes the MainScaffold with BottomNavBar)
     stack.add(
-      MainTabPage( // Use MainTabPage for custom transition
+      MainTabPage(
+        // Use MainTabPage for custom transition
         key: ValueKey('MainScaffold_${_currentPath.mainPage.name}'),
-        name: 'MainScaffold_${_currentPath.mainPage.name}', // Optional: for route observers/debugging
+        name:
+            'MainScaffold_${_currentPath.mainPage.name}', // Optional: for route observers/debugging
         child: MainScaffold(
           currentMainPage: _currentPath.mainPage,
-          onNavigateToMainPage: (page) { // For BottomNavBar taps
+          onNavigateToMainPage: (page) {
+            // For BottomNavBar taps
             navBloc.add(NavTo(page));
           },
           // Pass a method to allow MainScaffold to push sub-pages
@@ -250,7 +268,7 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
     // This is called by the RouteInformationParser
     // Update NavBloc to match the new path
     navBloc.add(NavResetToMainPage(path.mainPage));
-    
+
     // Push all sub-pages in order
     for (String subPageRoute in path.subPageStack) {
       navBloc.add(NavPushSubPage(subPageRoute));
@@ -271,7 +289,9 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
 // --- RouteInformationParser ---
 class AppRouteInformationParser extends RouteInformationParser<AppPath> {
   @override
-  Future<AppPath> parseRouteInformation(RouteInformation routeInformation) async {
+  Future<AppPath> parseRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
     final uri = Uri.parse(routeInformation.location);
     if (uri.pathSegments.isEmpty || uri.path == '/') {
       return AppPath.home; // Default to home
@@ -281,12 +301,15 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
     final mainPageConfig = navScreenConfigFromRoute('/${uri.pathSegments[0]}');
     if (mainPageConfig != null && mainPageConfig.inNavBar) {
       AppPage mainPage = AppPage.values.firstWhere(
-          (p) => routeFromAppPage(p) == mainPageConfig.route,
-          orElse: () => AppPage.home);
+        (p) => routeFromAppPage(p) == mainPageConfig.route,
+        orElse: () => AppPage.home,
+      );
 
       if (uri.pathSegments.length > 1) {
         // We have a sub-page
-        final fullSubPageRoute = (uri.pathSegments.length > 1 && !uri.pathSegments[1].startsWith('/'))
+        final fullSubPageRoute =
+            (uri.pathSegments.length > 1 &&
+                !uri.pathSegments[1].startsWith('/'))
             ? '/' + uri.pathSegments.sublist(1).join('/')
             : uri.pathSegments.sublist(1).join('/');
 
@@ -294,7 +317,7 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
         if (subPageConfig != null) {
           return AppPath(mainPage, [fullSubPageRoute]);
         } else {
-           // Invalid sub-page, go to main page
+          // Invalid sub-page, go to main page
           print("Could not find sub page config for: $fullSubPageRoute");
           return AppPath(mainPage); // Just the main page
         }
@@ -305,8 +328,8 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
     // Fallback for unknown routes or direct sub-page links
     final directSubPageConfig = navScreenConfigFromRoute(uri.path);
     if (directSubPageConfig != null && !directSubPageConfig.inNavBar) {
-        // If it's a known sub-page, default to sandbox main page with this subpage
-        return AppPath(AppPage.sandbox, [uri.path]);
+      // If it's a known sub-page, default to sandbox main page with this subpage
+      return AppPath(AppPage.sandbox, [uri.path]);
     }
 
     print("Route not recognized, defaulting to home: ${uri.path}");
@@ -319,16 +342,18 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
     if (path.hasSubPages) {
       // Add the current sub-page to the location
       if (path.currentSubPage != null && path.currentSubPage!.isNotEmpty) {
-        location += (path.currentSubPage!.startsWith('/') ? '' : '/') + path.currentSubPage!;
+        location +=
+            (path.currentSubPage!.startsWith('/') ? '' : '/') +
+            path.currentSubPage!;
       }
     }
     // Ensure the location always starts with a /
     if (!location.startsWith('/')) {
-        location = '/$location';
+      location = '/$location';
     }
     // And remove trailing slash if it's not the root
     if (location != '/' && location.endsWith('/')) {
-        location = location.substring(0, location.length - 1);
+      location = location.substring(0, location.length - 1);
     }
     return RouteInformation(location: location);
   }
@@ -340,11 +365,12 @@ String routeFromAppPage(AppPage page) {
     (s) => s.label.toLowerCase() == page.name.toLowerCase() && s.inNavBar,
     // Fallback if label matching fails (e.g. if AppPage enum names differ from labels)
     // A more robust mapping might be needed if names/labels diverge significantly.
-    orElse: () => navScreens[page.index], // This assumes AppPage enum order matches navScreens order for main pages
+    orElse: () =>
+        navScreens[page
+            .index], // This assumes AppPage enum order matches navScreens order for main pages
   );
   return config.route;
 }
-
 
 // --- MainScaffold with BottomNavigationBar ---
 class MainScaffold extends StatefulWidget {
@@ -372,7 +398,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final mainPageConfig = navScreenConfigFromRoute(routeFromAppPage(widget.currentMainPage));
+    final mainPageConfig = navScreenConfigFromRoute(
+      routeFromAppPage(widget.currentMainPage),
+    );
     bool showBottomNavBar = mainPageConfig?.inNavBar ?? false;
 
     // Determine the current body widget based on currentMainPage
@@ -380,15 +408,27 @@ class _MainScaffoldState extends State<MainScaffold> {
     Widget currentPageWidget;
     switch (widget.currentMainPage) {
       case AppPage.home:
-        currentPageWidget = PageStorage(bucket: _bucket, child: HomePage(key: _homeKey));
+        currentPageWidget = PageStorage(
+          bucket: _bucket,
+          child: HomePage(key: _homeKey),
+        );
         break;
       case AppPage.settings:
-        currentPageWidget = PageStorage(bucket: _bucket, child: SettingsPage(key: _settingsKey));
+        currentPageWidget = PageStorage(
+          bucket: _bucket,
+          child: SettingsPage(key: _settingsKey),
+        );
         break;
       case AppPage.sandbox:
         // For SandboxPage, we need to pass the onPushSubPage callback
         // This requires modifying SandboxPage to accept this callback.
-        currentPageWidget = PageStorage(bucket: _bucket, child: SandboxPage(key: _sandboxKey /*, onPushSubPage: widget.onPushSubPage (add this later) */));
+        currentPageWidget = PageStorage(
+          bucket: _bucket,
+          child: SandboxPage(
+            key:
+                _sandboxKey /*, onPushSubPage: widget.onPushSubPage (add this later) */,
+          ),
+        );
         break;
     }
     return Scaffold(
@@ -396,14 +436,17 @@ class _MainScaffoldState extends State<MainScaffold> {
       // For now, let individual pages (including sub-pages) define their own AppBars
       body: currentPageWidget,
       floatingActionButton: PanicButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: showBottomNavBar
           ? BottomNavigationBar(
               items: navScreens
                   .where((s) => s.inNavBar)
-                  .map((s) => BottomNavigationBarItem(
-                        icon: Icon(s.icon),
-                        label: s.label,
-                      ))
+                  .map(
+                    (s) => BottomNavigationBarItem(
+                      icon: Icon(s.icon),
+                      label: s.label,
+                    ),
+                  )
                   .toList(),
               currentIndex: AppPage.values.indexOf(widget.currentMainPage),
               onTap: (index) {
