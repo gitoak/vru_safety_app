@@ -1,4 +1,10 @@
 {
+  "speed": [
+    {
+      "if": "true",
+      "limit_to": 5.0
+    }
+  ],
   "priority": [
     {
       "if": "in_lowdanger",
