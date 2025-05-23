@@ -167,9 +167,9 @@ class _NavigationPageState extends State<NavigationPage> {
           _userHeading = heading; // Always store the heading
         });
 
-        // In compass mode, rotate the map instead of the marker
-        if (_compassMode && _mapReady && _userPosition != null) {
-          _mapController.rotate(heading); // Add 180° to fix orientation
+        // Rotate the map to match the user's heading with a 180° correction
+        if (_mapReady && _userPosition != null) {
+          _mapController.rotate(-heading + 180.0); // Ensure the arrow points up
         }
       }
     });
@@ -458,10 +458,7 @@ class _NavigationPageState extends State<NavigationPage> {
   void _centerMapOnCurrentPosition() {
     if (_userPosition != null && _mapReady) {
       // Center the map on user position with appropriate zoom
-      _mapController.move(
-        _userPosition!,
-        18.0,
-      );
+      _mapController.move(_userPosition!, 18.0);
 
       // Ensure the map rotation matches the user's heading
       if (_compassMode) {
@@ -481,7 +478,7 @@ class _NavigationPageState extends State<NavigationPage> {
       if (_compassMode) {
         // When entering compass mode, rotate map to current heading
         _mapController.rotate(
-          -_userHeading
+          -_userHeading,
         ); // Correct rotation without 180° adjustment
       } else {
         // When exiting compass mode, reset map rotation
@@ -501,7 +498,9 @@ class _NavigationPageState extends State<NavigationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Navigation'), // Changed title from old one to 'Navigation'
+        title: const Text(
+          'Navigation',
+        ), // Changed title from old one to 'Navigation'
       ),
       body: _pageLoading
           ? const Center(child: CircularProgressIndicator())
