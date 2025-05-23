@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc/nav_bloc.dart';
+import 'bloc/settings_bloc.dart';
 import 'theme.dart';
 import 'navigation_config.dart';
 
@@ -13,8 +14,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => NavBloc(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => NavBloc()),
+        BlocProvider(create: (_) => SettingsBloc()),
+      ],
       child: MaterialApp.router(
         title: 'Flutter Demo',
         theme: appTheme,
