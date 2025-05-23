@@ -479,8 +479,9 @@ class _NavigationPageState extends State<NavigationPage> {
 
     if (_mapReady) {
       if (_compassMode) {
-        // When entering compass mode, rotate map to current heading        _mapController.rotate(
-          -_userHeading,
+        // When entering compass mode, rotate map to current heading
+        _mapController.rotate(
+          -_userHeading
         ); // Correct rotation without 180° adjustment
       } else {
         // When exiting compass mode, reset map rotation
