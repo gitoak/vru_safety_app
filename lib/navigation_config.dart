@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'pages/graph_hopper_poc_page.dart';
-import 'pages/home_page.dart';
-import 'pages/sandbox_graphhopper_page.dart';
-import 'pages/sandbox_page.dart';
+import 'pages/navigation_page.dart'; // Updated import
+import 'pages/placeholder_page.dart'; // Added import
 import 'pages/settings_page.dart';
-import 'pages/osm_poc_page.dart';
 
 class NavScreenConfig {
   final String route;
@@ -24,55 +21,24 @@ class NavScreenConfig {
 
 final List<NavScreenConfig> navScreens = [
   NavScreenConfig(
-    route: '/',
-    label: 'Home',
-    icon: Icons.home,
-    builder: () => const HomePage(),
+    route: '/placeholder', // Updated route
+    label: 'Placeholder', // Updated label
+    icon: Icons.help_outline, // Placeholder icon
+    builder: () => const PlaceholderPage(), // Updated builder
     inNavBar: true,
   ),
   NavScreenConfig(
-    route: '/settings',
-    label: 'Settings',
-    icon: Icons.settings,
+    route: '/navigation', // Updated route
+    label: 'Navigation', // Updated label
+    icon: Icons.navigation, // Updated icon
+    builder: () => const NavigationPage(), // Updated builder
+    inNavBar: true,
+  ),
+  NavScreenConfig(
+    route: '/settings', // Updated route
+    label: 'Settings', // Updated label
+    icon: Icons.settings, // Updated icon
     builder: () => const SettingsPage(),
     inNavBar: true,
-  ),
-  // Example for a non-navbar screen:
-  // NavScreenConfig(
-  //   route: '/details',
-  //   label: 'Details',
-  //   icon: Icons.info,
-  //   builder: () => const DetailsPage(),
-  //   inNavBar: false,
-  // ),
-  NavScreenConfig(
-    route: "/sandbox",
-    label: "Sandbox",
-    icon: Icons.code,
-    builder: () => const SandboxPage(),
-    inNavBar: true,
-  ),
-  NavScreenConfig(
-    route: '/osm-poc',
-    label: 'OSM POC',
-    icon: Icons.map,
-    builder: () => const OsmPocPage(),
-    inNavBar: false,
-  ),
-  // GraphHopperPocPage
-  NavScreenConfig(
-    route: '/graphhopper-poc',
-    label: 'GraphHopper POC',
-    icon: Icons.route_outlined,
-    builder: () => const GraphHopperPocPage(),
-    inNavBar: false,
-  ),
-  // SandboxGraphhopperPage
-  NavScreenConfig(
-    route: '/sandbox-graphhopper',
-    label: 'GraphHopper Sandbox',
-    icon: Icons.explore_outlined,
-    builder: () => const SandboxGraphhopperPage(),
-    inNavBar: false,
   ),
 ];
