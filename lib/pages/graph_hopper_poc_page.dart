@@ -9,10 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import './danger_zone_alert_system.dart';
-import 'package:flutter/services.dart' show rootBundle; // Added for rootBundle
-import 'dart:typed_data'; // Added for ByteData
-import 'package:shapefile/shapefile.dart'
-    as shp; // Added for shapefile processing
 
 class GraphHopperPocPage extends StatefulWidget {
   const GraphHopperPocPage({super.key});
@@ -222,58 +218,70 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
 
   Future<void> _loadDangerZones() async {
     try {
-      final ByteData shpData = await rootBundle.load('assets/roads/datei.shp');
-      final ByteData dbfData = await rootBundle.load('assets/roads/datei.dbf');
+      debugPrint('Starting to load danger zones...');
 
-      final reader = shp.ShapefileReader(
-        shpData.buffer.asUint8List(),
-        dbf: dbfData.buffer.asUint8List(),
-      );
-      final features = await reader.read();
+      // For now, use fallback polygons due to shapefile package compatibility issues
+      // TODO: Fix shapefile loading when package is compatible
+      _loadFallbackDangerZones();
 
-      List<fm.Polygon<Object>> loadedPolygons = [];
-      for (final feature in features) {
-        if (feature.geometry is shp.Polygon) {
-          final polygon = feature.geometry as shp.Polygon;
-          for (final ring in polygon.rings) {
-            final List<LatLng> polygonRingPoints = [
-              for (final coord in ring) LatLng(coord.y, coord.x)
-            ];
-            if (polygonRingPoints.length >= 3) {
-              loadedPolygons.add(
-                fm.Polygon<Object>(
-                  points: polygonRingPoints,
-                  color: Colors.red.withOpacity(0.3), // Fill color
-                  borderColor: Colors.red,
-                  borderStrokeWidth: 2.0,
-                ),
-              );
-            } else {
-              debugPrint(
-                'Skipping a ring with fewer than 3 points: $polygonRingPoints',
-              );
-            }
-          }
-        }
+      // Commented out shapefile loading code until package compatibility is resolved
+      /*
+      try {
+        final ByteData shpData = await rootBundle.load('assets/roads/datei.shp');
+        final ByteData dbfData = await rootBundle.load('assets/roads/datei.dbf');
+
+        debugPrint('Successfully loaded shapefile assets');
+
+        // Shapefile processing code would go here
+        // when the package compatibility issues are resolved
+        
+      } catch (shapefileError) {
+        debugPrint('Shapefile loading failed: $shapefileError');
+        _loadFallbackDangerZones();
       }
-
-      if (mounted) {
-        setState(() {
-          _dangerZonePolygons = loadedPolygons;
-        });
-        debugPrint(
-          'Loaded ${_dangerZonePolygons.length} danger zone polygons from shapefile.',
-        );
-      }
+      */
     } catch (e, s) {
       debugPrint('Error loading danger zones: $e');
       debugPrint('Stack trace for danger zone loading error: $s');
-      if (mounted) {
-        // Optionally, show a SnackBar or other UI indication of the error
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('Failed to load danger zones: $e')),
-        // );
-      }
+      _loadFallbackDangerZones();
+    }
+  }
+
+  void _loadFallbackDangerZones() {
+    debugPrint('Loading fallback danger zones...');
+    List<fm.Polygon<Object>> fallbackPolygons = [
+      fm.Polygon<Object>(
+        points: [
+          const LatLng(49.010, 12.098),
+          const LatLng(49.019, 12.098),
+          const LatLng(49.019, 12.102),
+          const LatLng(49.010, 12.102),
+        ],
+        color: Colors.red.withOpacity(0.3),
+        borderColor: Colors.red,
+        borderStrokeWidth: 2.0,
+      ),
+      // Add another test polygon
+      fm.Polygon<Object>(
+        points: [
+          const LatLng(49.015, 12.100),
+          const LatLng(49.017, 12.100),
+          const LatLng(49.017, 12.103),
+          const LatLng(49.015, 12.103),
+        ],
+        color: Colors.orange.withOpacity(0.3),
+        borderColor: Colors.orange,
+        borderStrokeWidth: 2.0,
+      ),
+    ];
+
+    if (mounted) {
+      setState(() {
+        _dangerZonePolygons = fallbackPolygons;
+      });
+      debugPrint(
+        'Loaded ${_dangerZonePolygons.length} fallback danger zone polygons.',
+      );
     }
   }
 
@@ -439,6 +447,13 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
       });
     }
     _searchAndRoute();
+  }
+
+  @override
+  void dispose() {
+    _positionStreamSubscription?.cancel();
+    _compassSubscription?.cancel();
+    super.dispose();
   }
 
   @override
