@@ -311,6 +311,21 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
           _alerted = false;
         });
         debugPrint("Danger condition cleared. Alerted state reset.");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gefahrenzone verlassen.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        //vibrate shortly
+        if (await Vibration.hasVibrator() ?? false) {
+          Vibration.vibrate(duration: 500); // Short vibration to indicate leaving danger zone
+          debugPrint("Short vibration triggered for leaving danger zone.");
+        } else {
+          debugPrint("Device does not have a vibrator.");
+        }
       }
     }
   }
