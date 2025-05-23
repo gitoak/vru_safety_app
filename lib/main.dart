@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'bloc/nav_bloc.dart';
 import 'bloc/settings_bloc.dart';
 import 'bloc/panic_bloc/panic_bloc.dart';
+import 'bloc/onboarding_bloc.dart';
 import 'widgets/panic_button.dart';
 import 'theme.dart';
 import 'navigation_config.dart';
@@ -65,7 +66,8 @@ void main() {
       providers: [
         BlocProvider(create: (context) => NavBloc()),
         BlocProvider(create: (context) => SettingsBloc()),
-        BlocProvider(create: (context) => PanicBloc()), // Add PanicBloc
+        BlocProvider(create: (context) => PanicBloc()),
+        BlocProvider(create: (context) => OnboardingBloc()), // Add OnboardingBloc
       ],
       child: const MyApp(),
     ),
@@ -82,51 +84,41 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late AppRouterDelegate _routerDelegate;
   final AppRouteInformationParser _routeInformationParser = AppRouteInformationParser();
-  bool _showOnboarding = true; // Default to true
 
   @override
   void initState() {
     super.initState();
-    _checkOnboardingStatus();
     _routerDelegate = AppRouterDelegate(
       navBloc: context.read<NavBloc>(),
       // Initialize with placeholder page as the default
       initialPath: AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder')),
     );
-  }
-
-  Future<void> _checkOnboardingStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
-    setState(() {
-      _showOnboarding = !onboardingComplete;
-    });
-  }
-
-  void _handleOnboardingFinish() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboardingComplete', true);
-    setState(() {
-      _showOnboarding = false;
-    });
+    // Use Bloc to check onboarding status
+    context.read<OnboardingBloc>().add(CheckOnboardingStatus());
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showOnboarding) {
-      return MaterialApp(
-        theme: appTheme,
-        builder: (context, child) => AccessibilityTools(child: child),
-        home: OnboardingPage(onFinish: _handleOnboardingFinish),
-      );
-    }
-
-    return MaterialApp.router(
-      theme: appTheme,
-      builder: (context, child) => AccessibilityTools(child: child),
-      routerDelegate: _routerDelegate,
-      routeInformationParser: _routeInformationParser,
-      backButtonDispatcher: RootBackButtonDispatcher(),
+    return BlocBuilder<OnboardingBloc, OnboardingState>(
+      builder: (context, state) {
+        if (state.showOnboarding) {
+          return MaterialApp(
+            theme: appTheme,
+            builder: (context, child) => AccessibilityTools(child: child),
+            home: OnboardingPage(onFinish: () {
+              context.read<OnboardingBloc>().add(CompleteOnboarding());
+            }),
+          );
+        } else {
+          return MaterialApp.router(
+            theme: appTheme,
+            builder: (context, child) => AccessibilityTools(child: child),
+            routerDelegate: _routerDelegate,
+            routeInformationParser: _routeInformationParser,
+            backButtonDispatcher: RootBackButtonDispatcher(),
+          );
+        }
+      },
     );
   }
 }
@@ -151,17 +143,15 @@ class AppPath {
   factory AppPath.fromNavState(NavState navState) {
     String route;
     switch (navState.mainPage) {
-      case AppPage.home:
+      case AppPage.placeholder:
         route = '/placeholder';
         break;
       case AppPage.settings:
         route = '/settings';
         break;
-      case AppPage.sandbox:
-        route = '/navigation'; // Corrected mapping for sandbox to navigation route
+      case AppPage.navigation:
+        route = '/navigation';
         break;
-      // default: // Optional: handle unexpected AppPage values, though all should be covered
-      //   route = '/placeholder'; 
     }
     final mainScreenConfig = navScreenConfigFromRoute(route);
     return AppPath.fromScreen(mainScreenConfig, navState.subPageStack);
@@ -232,11 +222,11 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
     Widget resolvedPageContent;
 
     if (isMainTab) {
-      AppPage currentPageEnum = AppPage.home; // Default
+      AppPage currentPageEnum = AppPage.placeholder; // Default
       if (_currentPath.currentScreen!.route == '/placeholder') {
-        currentPageEnum = AppPage.home;
+        currentPageEnum = AppPage.placeholder;
       } else if (_currentPath.currentScreen!.route == '/navigation') {
-        currentPageEnum = AppPage.sandbox; // Assuming sandbox maps to navigation
+        currentPageEnum = AppPage.navigation;
       } else if (_currentPath.currentScreen!.route == '/settings') {
         currentPageEnum = AppPage.settings;
       }
@@ -300,19 +290,18 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
       AppPage targetPage;
       switch (configuration.currentScreen!.route) {
         case '/placeholder':
-          targetPage = AppPage.home; // Assuming placeholder maps to a conceptual "home"
+          targetPage = AppPage.placeholder;
           break;
         case '/navigation':
-          targetPage = AppPage.sandbox; // Assuming navigation maps to a conceptual "sandbox"
+          targetPage = AppPage.navigation;
           break;
         case '/settings':
           targetPage = AppPage.settings;
           break;
         default:
-          // Fallback or error handling if the route is unexpected
-          targetPage = AppPage.home; // Default to placeholder's conceptual home
+          targetPage = AppPage.placeholder;
       }
-      navBloc.add(NavTo(targetPage)); // Or NavResetToMainPage if that's more appropriate
+      navBloc.add(NavTo(targetPage));
       // If there are subpages, you might need to dispatch NavPushSubPage events
       for (var subRoute in configuration.subPageStack) {
         navBloc.add(NavPushSubPage(subRoute));
@@ -375,8 +364,8 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   // Define the correct order of AppPage enums as they appear in the BottomNavBar
   final List<AppPage> _bottomNavOrder = [
-    AppPage.home,     // Corresponds to Placeholder (index 0)
-    AppPage.sandbox,  // Corresponds to Navigation (index 1)
+    AppPage.placeholder,     // Corresponds to Placeholder (index 0)
+    AppPage.navigation,  // Corresponds to Navigation (index 1)
     AppPage.settings  // Corresponds to Settings (index 2)
   ];
 
@@ -391,7 +380,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     // We wrap each main page view in PageStorage to preserve state
     Widget currentPageWidget;
     switch (widget.currentMainPage) {
-      case AppPage.home:
+      case AppPage.placeholder:
         currentPageWidget = PageStorage(
           bucket: _bucket,
           child: PlaceholderPage(key: _placeholderKey), // Use updated key
@@ -403,7 +392,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: SettingsPage(key: _settingsKey),
         );
         break;
-      case AppPage.sandbox:
+      case AppPage.navigation:
         // For SandboxPage, we need to pass the onPushSubPage callback
         // This requires modifying SandboxPage to accept this callback.
         currentPageWidget = PageStorage(
