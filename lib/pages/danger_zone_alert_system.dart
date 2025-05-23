@@ -166,31 +166,7 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
           iOS: DarwinNotificationDetails(presentSound: true),
         ),
       );
-      debugPrint('First notification sent');
-      // Additional attention notification
-      await _notifications!.show(
-        1,
-        'Achtung',
-        'Sie sind in der Nähe einer Gefahrenzone, bitte seien Sie aufmerksam!',
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'danger_zone',
-            'Gefahrenzonen',
-            channelDescription: 'Warnungen bei Annäherung an Gefahrenzonen',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-            vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
-            ticker: 'Gefahrenzone',
-          ),
-          iOS: DarwinNotificationDetails(presentSound: true),
-        ),
-      );
-      debugPrint('Second notification sent');
-      if (await Vibration.hasVibrator()) {
-        Vibration.vibrate(pattern: [0, 500, 200, 500]);
-      }
+      debugPrint('notification sent');
       // Show a SnackBar as a fallback to confirm the button works
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,20 +210,40 @@ class _DangerZoneAlertSystemState extends State<DangerZoneAlertSystem> {
 
   Future<bool> _checkShouldWarn(LatLng user) async {
     try {
-      final resp = await http.get(
-        Uri.parse(
-          'https://vruapi.jannik.dev/coordinate?coord=${user.latitude},${user.longitude}',
-        ),
+      // final uri = Uri.parse(
+      //   'https://vruapi.jannik.dev/is_dangerous_road_nearby?coord=${user.latitude},${user.longitude}',
+      // );
+      final uri = Uri.parse(
+        'https://vruapi.jannik.dev/is_dangerous_road_nearby?coord=${user.latitude},${user.longitude}',
       );
+      debugPrint('Checking danger status with API: $uri'); // Log the URI
+
+      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
+
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
-        // Expecting { warn: true/false } from API
-        return data['warn'] == true;
+        debugPrint('API Response Data: $data'); // Log the full API response
+
+        if (data['success'] == true) {
+          debugPrint(data);
+          // Expecting { success: true/false, dangerous_roads_nearby: true/false }
+          return data['dangerous_roads_nearby'] == true;
+        } else {
+          debugPrint(
+            'API call successful but operation failed: ${data['message'] ?? 'No error message provided.'}',
+          );
+          return false; // API indicated failure
+        }
+      } else {
+        debugPrint(
+          'API request failed with status code: ${resp.statusCode}. Response body: ${resp.body}',
+        );
       }
-    } catch (e) {
-      debugPrint('Warning API error: $e');
+    } catch (e, s) {
+      debugPrint('Error in _checkShouldWarn (API call): $e');
+      debugPrint('Stack trace for API error: $s');
     }
-    return false;
+    return false; // Default to false in case of any error or unexpected response
   }
 
   void _simulateDanger() {
