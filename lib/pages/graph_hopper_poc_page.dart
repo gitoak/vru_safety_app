@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import './danger_zone_alert_system.dart';
 
 class GraphHopperPocPage extends StatefulWidget {
   const GraphHopperPocPage({super.key});
@@ -17,7 +18,6 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
   bool _loading = false;
   String? _error;
   LatLng? _userPosition;
-  String _destinationAddress = '';
   LatLng? _destinationPosition;
   final TextEditingController _addressController = TextEditingController();
   List<String> _suggestions = [];
@@ -224,7 +224,6 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                 if (_instructions.isNotEmpty)
                   StatefulBuilder(
                     builder: (context, setBarState) {
-                      // Use a local variable to track expansion
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -235,6 +234,20 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                       );
                     },
                   ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                  child: DangerZoneAlertSystem(
+                    dangerousPolygons: [
+                      [
+                        LatLng(49.010, 12.098),
+                        LatLng(49.019, 12.098),
+                        LatLng(49.019, 12.102),
+                        LatLng(49.010, 12.102),
+                        LatLng(49.010, 12.098),
+                      ],
+                    ],
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
@@ -287,7 +300,6 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   tileColor: Colors.transparent,
-                                  hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
