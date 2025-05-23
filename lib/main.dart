@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bloc/nav_bloc.dart';
 import 'bloc/settings_bloc.dart';
+import 'bloc/panic_bloc/panic_bloc.dart';
+import 'widgets/panic_button.dart';
 import 'theme.dart';
 import 'navigation_config.dart';
 import 'pages/onboarding_page.dart';
@@ -50,6 +52,7 @@ void main() {
       providers: [
         BlocProvider(create: (context) => NavBloc()),
         BlocProvider(create: (context) => SettingsBloc()),
+        BlocProvider(create: (context) => PanicBloc()), // Add PanicBloc
       ],
       child: const MyApp(),
     ),
@@ -388,12 +391,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         currentPageWidget = PageStorage(bucket: _bucket, child: SandboxPage(key: _sandboxKey /*, onPushSubPage: widget.onPushSubPage (add this later) */));
         break;
     }
-
-
     return Scaffold(
       // AppBar might be part of individual pages or a common one here
       // For now, let individual pages (including sub-pages) define their own AppBars
       body: currentPageWidget,
+      floatingActionButton: PanicButton(),
       bottomNavigationBar: showBottomNavBar
           ? BottomNavigationBar(
               items: navScreens
