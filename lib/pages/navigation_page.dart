@@ -175,25 +175,17 @@ class _NavigationPageState extends State<NavigationPage> {
               },
             );
 
-    _compassSubscription = FlutterCompass.events
-        ?.transform(
-          ThrottleStreamTransformer(
-            (_) => Stream<void>.periodic(const Duration(milliseconds: 500)),
-          ),
-        ) // Throttle updates to 500ms
-        .listen((CompassEvent event) {
-          if (mounted) {
-            final heading = event.heading ?? 0.0;
-            setState(() {
-              _userHeading = heading; // Always store the heading
-            });
-
-            // Rotate the map to match the user's heading
-            if (_mapReady && _userPosition != null) {
-              _mapController.rotate(-heading); // Ensure the arrow points up
-            }
-          }
+    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
+      if (mounted) {
+        final heading = event.heading ?? 0.0;
+        setState(() {
+          _userHeading = heading; // Always store the heading
         });
+
+        // Removed auto-rotation logic to allow free user control
+        debugPrint('Compass heading updated: $heading degrees');
+      }
+    });
   }
 
   Future<void> _fetchInitialRoute() async {
@@ -437,20 +429,6 @@ class _NavigationPageState extends State<NavigationPage> {
     _searchAndRoute();
   }
 
-  void _centerMapOnCurrentPosition() {
-    if (_userPosition != null && _mapReady) {
-      // Center the map on user position with appropriate zoom
-      _mapController.move(_userPosition!, 18.0);
-
-      // Ensure the map rotation matches the user's heading
-      if (_compassMode) {
-        _mapController.rotate(-_userHeading);
-      } else {
-        _mapController.rotate(0.0); // Reset rotation if not in compass mode
-      }
-    }
-  }
-
   void _toggleCompassMode() {
     setState(() {
       _compassMode = !_compassMode;
@@ -458,13 +436,11 @@ class _NavigationPageState extends State<NavigationPage> {
 
     if (_mapReady) {
       if (_compassMode) {
-        // When entering compass mode, rotate map to current heading
-        _mapController.rotate(
-          -_userHeading,
-        ); // Correct rotation without 180° adjustment
+        // When entering compass mode, no auto-rotation is applied
+        debugPrint('Compass mode enabled, user can rotate freely.');
       } else {
-        // When exiting compass mode, reset map rotation
-        _mapController.rotate(0.0);
+        // When exiting compass mode, no auto-rotation is applied
+        debugPrint('Compass mode disabled, user can rotate freely.');
       }
     }
   }
@@ -479,11 +455,7 @@ class _NavigationPageState extends State<NavigationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Navigation',
-        ), // Changed title from old one to 'Navigation'
-      ),
+      appBar: AppBar(title: const Text('Navigation')),
       body: _pageLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -546,22 +518,17 @@ class _NavigationPageState extends State<NavigationPage> {
                           margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                            ), // Adjusted border color
+                            border: Border.all(color: Colors.grey.shade300),
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(
-                                  0.1,
-                                ), // Softer shadow
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: ListView.builder(
-                            // Changed to ListView.builder for efficiency
                             shrinkWrap: true,
                             itemCount: _suggestions.length,
                             itemBuilder: (context, index) {
@@ -614,19 +581,14 @@ class _NavigationPageState extends State<NavigationPage> {
                 else
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: 80.0,
-                      ), // Add padding to avoid overlap with FloatingActionButton
+                      padding: const EdgeInsets.only(bottom: 80.0),
                       child: fm.FlutterMap(
-                        // Use fm. alias
                         mapController: _mapController,
                         options: fm.MapOptions(
-                          // Use fm. alias
                           initialCenter: _userPosition ?? const LatLng(0, 0),
                           initialZoom: _currentZoom,
                           onPositionChanged:
                               (fm.MapCamera camera, bool hasGesture) {
-                                // Use fm. alias
                                 if (hasGesture) {
                                   if (camera.zoom != _currentZoom) {
                                     if (mounted) {
@@ -637,10 +599,7 @@ class _NavigationPageState extends State<NavigationPage> {
                                   }
                                 }
                               },
-                          onMapEvent: (fm.MapEvent event) {
-                            // Use fm. alias
-                            // Can listen to other map events if needed
-                          },
+                          onMapEvent: (fm.MapEvent event) {},
                           onMapReady: () {
                             if (mounted) {
                               setState(() {
@@ -681,10 +640,8 @@ class _NavigationPageState extends State<NavigationPage> {
                             )
                           else
                             fm.PolygonLayer(
-                              // Fallback
                               polygons: [
                                 fm.Polygon<Object>(
-                                  // Explicitly type with <Object>
                                   points: [
                                     const LatLng(49.010, 12.098),
                                     const LatLng(49.019, 12.098),
@@ -692,21 +649,16 @@ class _NavigationPageState extends State<NavigationPage> {
                                     const LatLng(49.010, 12.102),
                                     const LatLng(49.010, 12.098),
                                   ],
-                                  color: Colors.orange.withOpacity(
-                                    0.3,
-                                  ), // Fill color
+                                  color: Colors.orange.withOpacity(0.3),
                                   borderColor: Colors.orange,
-                                  borderStrokeWidth:
-                                      3.0, // Explicit double, no isFilled/filled
+                                  borderStrokeWidth: 3.0,
                                 ),
                               ],
                             ),
                           fm.MarkerLayer(
-                            // Use fm. alias
                             markers: [
                               if (_userPosition != null)
                                 fm.Marker(
-                                  // Use fm. alias
                                   width: 60.0,
                                   height: 60.0,
                                   point: _userPosition!,
@@ -723,7 +675,6 @@ class _NavigationPageState extends State<NavigationPage> {
                                 ),
                               if (_destinationPosition != null)
                                 fm.Marker(
-                                  // Use fm. alias
                                   width: 60.0,
                                   height: 60.0,
                                   point: _destinationPosition!,
@@ -737,7 +688,6 @@ class _NavigationPageState extends State<NavigationPage> {
                                   _routePoints!.isNotEmpty &&
                                   _destinationPosition == null)
                                 fm.Marker(
-                                  // Use fm. alias
                                   width: 60.0,
                                   height: 60.0,
                                   point: _routePoints!.last,
@@ -756,26 +706,14 @@ class _NavigationPageState extends State<NavigationPage> {
               ],
             ),
       floatingActionButton: _userPosition != null
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton(
-                  heroTag: "compass_toggle",
-                  onPressed: _toggleCompassMode,
-                  tooltip: _compassMode
-                      ? 'Exit compass mode'
-                      : 'Enter compass mode',
-                  backgroundColor: _compassMode ? Colors.orange : null,
-                  child: Icon(_compassMode ? Icons.explore : Icons.explore_off),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: "center_location",
-                  onPressed: _centerMapOnCurrentPosition,
-                  tooltip: 'Center on my location',
-                  child: const Icon(Icons.my_location),
-                ),
-              ],
+          ? FloatingActionButton(
+              heroTag: "compass_toggle",
+              onPressed: _toggleCompassMode,
+              tooltip: _compassMode
+                  ? 'Exit compass mode'
+                  : 'Enter compass mode',
+              backgroundColor: _compassMode ? Colors.orange : null,
+              child: Icon(_compassMode ? Icons.explore : Icons.explore_off),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
