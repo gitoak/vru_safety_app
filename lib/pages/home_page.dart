@@ -7,6 +7,14 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define a minimum size for tap targets
+    const minButtonSize = Size(48, 48);
+    // Define a style for ElevatedButton to ensure minimum tap target size
+    final ButtonStyle minSizeButtonStyle = ElevatedButton.styleFrom(
+      minimumSize: minButtonSize,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Ensure padding contributes to size
+    );
+
     return Center(
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -29,6 +37,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 16),
           
           ElevatedButton(
+            style: minSizeButtonStyle,
             onPressed: () {
               // Navigate to Sandbox tab programmatically
               context.read<NavBloc>().navigateToMainPage(AppPage.sandbox);
@@ -38,6 +47,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 8),
           
           ElevatedButton(
+            style: minSizeButtonStyle,
             onPressed: () {
               // Navigate to Settings tab and then push a sub-page
               context.read<NavBloc>().navigateToMainPage(AppPage.settings);
@@ -49,6 +59,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 8),
           
           ElevatedButton(
+            style: minSizeButtonStyle,
             onPressed: () {
               // Navigate to Sandbox and then immediately push a sub-page
               context.read<NavBloc>().navigateToMainPage(AppPage.sandbox);

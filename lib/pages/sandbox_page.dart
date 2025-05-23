@@ -12,6 +12,14 @@ class SandboxPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define a minimum size for tap targets
+    const minButtonSize = Size(48, 48);
+    // Define a style for ElevatedButton to ensure minimum tap target size
+    final ButtonStyle minSizeButtonStyle = ElevatedButton.styleFrom(
+      minimumSize: minButtonSize,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Ensure padding contributes to size
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Sandbox Page')),
       body: Center(
@@ -21,6 +29,7 @@ class SandboxPage extends StatelessWidget {
             const Text('Sandbox Page Content'),
             const SizedBox(height: 16),
             ElevatedButton(
+              style: minSizeButtonStyle, // Apply the style
               onPressed: () {
                 _navigateTo(context, '/osm-poc');
               },
@@ -28,6 +37,7 @@ class SandboxPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              style: minSizeButtonStyle, // Apply the style
               onPressed: () {
                 _navigateTo(context, '/sandbox-graphhopper');
               },
@@ -35,6 +45,7 @@ class SandboxPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              style: minSizeButtonStyle, // Apply the style
               onPressed: () {
                 _navigateTo(context, '/graphhopper-poc');
               },
