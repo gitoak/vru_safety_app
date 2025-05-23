@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // For AppRouterDelegate
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/nav_bloc.dart';
 
 class SandboxPage extends StatelessWidget {
   const SandboxPage({super.key});
 
   void _navigateTo(BuildContext context, String route) {
-    // Access the AppRouterDelegate to push a sub-page
-    final routerDelegate = Router.of(context).routerDelegate as AppRouterDelegate;
-    routerDelegate.pushSubPage(route);
+    // Use NavBloc to push a sub-page
+    context.read<NavBloc>().add(NavPushSubPage(route));
   }
 
   @override

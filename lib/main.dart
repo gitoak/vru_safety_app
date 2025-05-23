@@ -131,15 +131,33 @@ NavScreenConfig? navScreenConfigFromRoute(String? route) {
 // --- AppPath (represents the current navigation state) ---
 class AppPath {
   final AppPage mainPage; // Current main tab (Home, Settings, Sandbox)
-  final String? subPageRoute; // Path of a sub-page, if any
+  final List<String> subPageStack; // Stack of sub-page routes
 
-  AppPath(this.mainPage, [this.subPageRoute]);
+  AppPath(this.mainPage, [this.subPageStack = const []]);
 
-  bool get isSubPage => subPageRoute != null;
+  bool get hasSubPages => subPageStack.isNotEmpty;
+  String? get currentSubPage => subPageStack.isNotEmpty ? subPageStack.last : null;
 
   static AppPath home = AppPath(AppPage.home);
   static AppPath settings = AppPath(AppPage.settings);
   static AppPath sandbox = AppPath(AppPage.sandbox);
+
+  // Create AppPath from NavState
+  factory AppPath.fromNavState(NavState navState) {
+    return AppPath(navState.mainPage, navState.subPageStack);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AppPath &&
+        other.mainPage == mainPage &&
+        other.subPageStack.length == subPageStack.length &&
+        other.subPageStack.every((element) => subPageStack.contains(element));
+  }
+
+  @override
+  int get hashCode => Object.hash(mainPage, subPageStack);
 }
 
 // --- RouterDelegate ---
@@ -153,11 +171,8 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
 
   AppRouterDelegate(this.navBloc) {
     navBloc.stream.listen((navState) {
-      // Only update if the main page changes and no sub-page is active
-      if (!currentConfiguration.isSubPage && currentConfiguration.mainPage != navState.page) {
-        _currentPath = AppPath(navState.page);
-        notifyListeners();
-      }
+      _currentPath = AppPath.fromNavState(navState);
+      notifyListeners();
     });
   }
 
@@ -177,26 +192,23 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
           currentMainPage: _currentPath.mainPage,
           onNavigateToMainPage: (page) { // For BottomNavBar taps
             navBloc.add(NavTo(page));
-            _currentPath = AppPath(page);
-            notifyListeners();
           },
           // Pass a method to allow MainScaffold to push sub-pages
           onPushSubPage: (route) {
-            _currentPath = AppPath(_currentPath.mainPage, route);
-            notifyListeners();
+            navBloc.add(NavPushSubPage(route));
           },
         ),
       ),
     );
 
-    // If there's a sub-page, add it to the stack
-    if (_currentPath.isSubPage) {
-      final config = navScreenConfigFromRoute(_currentPath.subPageRoute);
+    // Add all sub-pages from the stack
+    for (String subPageRoute in _currentPath.subPageStack) {
+      final config = navScreenConfigFromRoute(subPageRoute);
       if (config != null) {
         stack.add(
           MaterialPage(
-            key: ValueKey(_currentPath.subPageRoute),
-            name: _currentPath.subPageRoute,
+            key: ValueKey(subPageRoute),
+            name: subPageRoute,
             child: config.builder(),
           ),
         );
@@ -218,13 +230,10 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
         if (!route.didPop(result)) {
           return false;
         }
-        // If we are on a sub-page, popping should take us back to the main page
-        if (_currentPath.isSubPage) {
-          _currentPath = AppPath(_currentPath.mainPage); // Go back to the main page
-          notifyListeners();
+        // If we are on a sub-page, pop it using the BLoC
+        if (_currentPath.hasSubPages) {
+          navBloc.add(NavPopSubPage());
         }
-        // If we are on a main page, popping might exit the app or be handled by RootBackButtonDispatcher
-        // For now, let the default behavior handle it.
         return true;
       },
     );
@@ -233,26 +242,23 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
   @override
   Future<void> setNewRoutePath(AppPath path) async {
     // This is called by the RouteInformationParser
-    // Update NavBloc if the main page part of the path changes
-    if (path.mainPage != navBloc.state.page) {
-      navBloc.add(NavTo(path.mainPage));
+    // Update NavBloc to match the new path
+    navBloc.add(NavResetToMainPage(path.mainPage));
+    
+    // Push all sub-pages in order
+    for (String subPageRoute in path.subPageStack) {
+      navBloc.add(NavPushSubPage(subPageRoute));
     }
-    _currentPath = path;
-    // No need to call notifyListeners() here as it's handled by the system
-    // when setNewRoutePath is called.
   }
 
   // Method to navigate to a sub-page from anywhere (e.g., SandboxPage)
   void pushSubPage(String route) {
-    _currentPath = AppPath(currentConfiguration.mainPage, route);
-    notifyListeners();
+    navBloc.add(NavPushSubPage(route));
   }
 
   // Method to navigate to a main page (used by BottomNavBar)
   void navigateToMainPage(AppPage page) {
     navBloc.add(NavTo(page));
-    _currentPath = AppPath(page);
-    notifyListeners();
   }
 }
 
@@ -260,7 +266,7 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
 class AppRouteInformationParser extends RouteInformationParser<AppPath> {
   @override
   Future<AppPath> parseRouteInformation(RouteInformation routeInformation) async {
-    final uri = Uri.parse(routeInformation.location); // Removed ?? '/' as location is non-nullable
+    final uri = Uri.parse(routeInformation.location);
     if (uri.pathSegments.isEmpty || uri.path == '/') {
       return AppPath.home; // Default to home
     }
@@ -274,51 +280,40 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
 
       if (uri.pathSegments.length > 1) {
         // We have a sub-page
-        // String subPageRoute = '/${uri.pathSegments.sublist(1).join('/')}'; // Unused variable removed
-        // We need to ensure the sub-page route is prefixed correctly if it's not absolute
         final fullSubPageRoute = (uri.pathSegments.length > 1 && !uri.pathSegments[1].startsWith('/'))
             ? '/' + uri.pathSegments.sublist(1).join('/')
             : uri.pathSegments.sublist(1).join('/');
 
-
         final subPageConfig = navScreenConfigFromRoute(fullSubPageRoute);
         if (subPageConfig != null) {
-          return AppPath(mainPage, fullSubPageRoute);
+          return AppPath(mainPage, [fullSubPageRoute]);
         } else {
-           // Invalid sub-page, go to main page or a 404 for the sub-page
+           // Invalid sub-page, go to main page
           print("Could not find sub page config for: $fullSubPageRoute");
-          return AppPath(mainPage, '/404'); // Or just AppPath(mainPage)
+          return AppPath(mainPage); // Just the main page
         }
       }
       return AppPath(mainPage); // Just the main page
     }
 
-    // Fallback for unknown routes or direct sub-page links (might need more robust handling)
-    // For now, try to see if it's a known non-navbar route directly
+    // Fallback for unknown routes or direct sub-page links
     final directSubPageConfig = navScreenConfigFromRoute(uri.path);
     if (directSubPageConfig != null && !directSubPageConfig.inNavBar) {
-        // If it's a known sub-page, decide a default main page (e.g. home or sandbox)
-        // This case is tricky for deep linking directly to subpages without a main page context.
-        // For now, let's assume sub-pages are always under a main page context set by _currentPath.
-        // So, if a URL like /osm-poc is hit directly, we might default to Sandbox/osm-poc
-        // Or, more simply, treat it as a request for that subpage under the *current* main page.
-        // This part depends on desired deep-linking behavior.
-        // For now, let's assume we default to home and then the subpage.
-        return AppPath(AppPage.home, uri.path);
+        // If it's a known sub-page, default to sandbox main page with this subpage
+        return AppPath(AppPage.sandbox, [uri.path]);
     }
 
-
     print("Route not recognized, defaulting to home: ${uri.path}");
-    return AppPath(AppPage.home, '/404'); // Or AppPath.home to show main home page
+    return AppPath.home; // Default to home page
   }
 
   @override
   RouteInformation? restoreRouteInformation(AppPath path) {
     String location = routeFromAppPage(path.mainPage);
-    if (path.isSubPage) {
-      // Ensure subPageRoute starts with a slash if it's not empty
-      if (path.subPageRoute != null && path.subPageRoute!.isNotEmpty) {
-        location += (path.subPageRoute!.startsWith('/') ? '' : '/') + path.subPageRoute!;
+    if (path.hasSubPages) {
+      // Add the current sub-page to the location
+      if (path.currentSubPage != null && path.currentSubPage!.isNotEmpty) {
+        location += (path.currentSubPage!.startsWith('/') ? '' : '/') + path.currentSubPage!;
       }
     }
     // Ensure the location always starts with a /
