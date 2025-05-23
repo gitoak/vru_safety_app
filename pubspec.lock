@@ -560,6 +560,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.5"
+  shapefile:
+    dependency: "direct main"
+    description:
+      name: shapefile
+      sha256: "69a44166d4b56f5e44094b7bf479fd0a6ab43a99ea8e03f5b0d4fb4890a31f3f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   shared_preferences:
     dependency: "direct main"
     description:

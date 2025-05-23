@@ -3,12 +3,16 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart' as fm; // Aliased import
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import './danger_zone_alert_system.dart';
+import 'package:flutter/services.dart' show rootBundle; // Added for rootBundle
+import 'dart:typed_data'; // Added for ByteData
+import 'package:shapefile/shapefile.dart'
+    as shp; // Added for shapefile processing
 
 class GraphHopperPocPage extends StatefulWidget {
   const GraphHopperPocPage({super.key});
@@ -32,9 +36,13 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
 
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<CompassEvent>? _compassSubscription;
-  final MapController _mapController = MapController();
+  final fm.MapController _mapController = fm.MapController(); // Use fm. alias
   double _currentZoom = 15.0;
   bool _mapReady = false;
+
+  List<fm.Polygon<Object>>
+  _dangerZonePolygons = // Explicitly type with <Object>
+      []; // Added for storing loaded danger zones
 
   @override
   void initState() {
@@ -48,6 +56,7 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
       _error = null;
     });
     await _initializeLocationAndCompass();
+    await _loadDangerZones(); // Added call to load danger zones
     // Fetch initial route only after we have the first location and map is ready
     if (_userPosition != null) {
       // Deferring initial route fetch until map is ready might be better if it depends on map state
@@ -211,13 +220,61 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _positionStreamSubscription?.cancel();
-    _compassSubscription?.cancel();
-    _addressController.dispose();
-    // _mapController.dispose(); // FlutterMap disposes its controller
-    super.dispose();
+  Future<void> _loadDangerZones() async {
+    try {
+      final ByteData shpData = await rootBundle.load('assets/roads/datei.shp');
+      final ByteData dbfData = await rootBundle.load('assets/roads/datei.dbf');
+
+      final reader = shp.ShapefileReader(
+        shpData.buffer.asUint8List(),
+        dbf: dbfData.buffer.asUint8List(),
+      );
+      final features = await reader.read();
+
+      List<fm.Polygon<Object>> loadedPolygons = [];
+      for (final feature in features) {
+        if (feature.geometry is shp.Polygon) {
+          final polygon = feature.geometry as shp.Polygon;
+          for (final ring in polygon.rings) {
+            final List<LatLng> polygonRingPoints = [
+              for (final coord in ring) LatLng(coord.y, coord.x)
+            ];
+            if (polygonRingPoints.length >= 3) {
+              loadedPolygons.add(
+                fm.Polygon<Object>(
+                  points: polygonRingPoints,
+                  color: Colors.red.withOpacity(0.3), // Fill color
+                  borderColor: Colors.red,
+                  borderStrokeWidth: 2.0,
+                ),
+              );
+            } else {
+              debugPrint(
+                'Skipping a ring with fewer than 3 points: $polygonRingPoints',
+              );
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _dangerZonePolygons = loadedPolygons;
+        });
+        debugPrint(
+          'Loaded ${_dangerZonePolygons.length} danger zone polygons from shapefile.',
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Error loading danger zones: $e');
+      debugPrint('Stack trace for danger zone loading error: $s');
+      if (mounted) {
+        // Optionally, show a SnackBar or other UI indication of the error
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Failed to load danger zones: $e')),
+        // );
+      }
+    }
   }
 
   List<LatLng> _decodePolyline(String encoded) {
@@ -517,25 +574,28 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                   )
                 else
                   Expanded(
-                    child: FlutterMap(
+                    child: fm.FlutterMap(
+                      // Use fm. alias
                       mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter:
-                            _userPosition ??
-                            const LatLng(0, 0), // Fallback, though guarded
+                      options: fm.MapOptions(
+                        // Use fm. alias
+                        initialCenter: _userPosition ?? const LatLng(0, 0),
                         initialZoom: _currentZoom,
-                        onPositionChanged: (MapCamera camera, bool hasGesture) {
-                          if (hasGesture) {
-                            if (camera.zoom != _currentZoom) {
-                              if (mounted) {
-                                setState(() {
-                                  _currentZoom = camera.zoom;
-                                });
+                        onPositionChanged:
+                            (fm.MapCamera camera, bool hasGesture) {
+                              // Use fm. alias
+                              if (hasGesture) {
+                                if (camera.zoom != _currentZoom) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _currentZoom = camera.zoom;
+                                    });
+                                  }
+                                }
                               }
-                            }
-                          }
-                        },
-                        onMapEvent: (MapEvent event) {
+                            },
+                        onMapEvent: (fm.MapEvent event) {
+                          // Use fm. alias
                           // Can listen to other map events if needed
                         },
                         onMapReady: () {
@@ -553,48 +613,59 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                         },
                       ),
                       children: [
-                        TileLayer(
+                        fm.TileLayer(
                           urlTemplate:
                               'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                           subdomains: const ['a', 'b', 'c'],
                         ),
                         if (_routePoints != null)
-                          PolylineLayer(
+                          fm.PolylineLayer(
                             polylines: [
-                              Polyline(
+                              fm.Polyline(
                                 points: _routePoints!,
                                 color: Colors.blue,
                                 strokeWidth: 5.0,
                               ),
                             ],
                           ),
-                        PolygonLayer(
-                          polygons: [
-                            Polygon(
-                              points: [
-                                const LatLng(49.010, 12.098),
-                                const LatLng(49.019, 12.098),
-                                const LatLng(49.019, 12.102),
-                                const LatLng(49.010, 12.102),
-                                const LatLng(49.010, 12.098),
-                              ],
-                              color: Colors.red.withOpacity(0.3),
-                              borderColor: Colors.red,
-                              borderStrokeWidth: 3,
-                            ),
-                          ],
-                        ),
-                        MarkerLayer(
+                        if (_dangerZonePolygons.isNotEmpty)
+                          fm.PolygonLayer(
+                            polygons: _dangerZonePolygons,
+                            polygonCulling: true,
+                          )
+                        else
+                          fm.PolygonLayer(
+                            // Fallback
+                            polygons: [
+                              fm.Polygon<Object>(
+                                // Explicitly type with <Object>
+                                points: [
+                                  const LatLng(49.010, 12.098),
+                                  const LatLng(49.019, 12.098),
+                                  const LatLng(49.019, 12.102),
+                                  const LatLng(49.010, 12.102),
+                                  const LatLng(49.010, 12.098),
+                                ],
+                                color: Colors.orange.withOpacity(
+                                  0.3,
+                                ), // Fill color
+                                borderColor: Colors.orange,
+                                borderStrokeWidth:
+                                    3.0, // Explicit double, no isFilled/filled
+                              ),
+                            ],
+                          ),
+                        fm.MarkerLayer(
+                          // Use fm. alias
                           markers: [
                             if (_userPosition != null)
-                              Marker(
+                              fm.Marker(
+                                // Use fm. alias
                                 width: 60.0,
                                 height: 60.0,
                                 point: _userPosition!,
                                 child: Transform.rotate(
-                                  angle:
-                                      (_userHeading) *
-                                      (math.pi / 180), // Degrees to Radians
+                                  angle: (_userHeading) * (math.pi / 180),
                                   child: const Icon(
                                     Icons.navigation,
                                     color: Colors.blue,
@@ -603,7 +674,8 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                                 ),
                               ),
                             if (_destinationPosition != null)
-                              Marker(
+                              fm.Marker(
+                                // Use fm. alias
                                 width: 60.0,
                                 height: 60.0,
                                 point: _destinationPosition!,
@@ -616,7 +688,8 @@ class _GraphHopperPocPageState extends State<GraphHopperPocPage> {
                             if (_routePoints != null &&
                                 _routePoints!.isNotEmpty &&
                                 _destinationPosition == null)
-                              Marker(
+                              fm.Marker(
+                                // Use fm. alias
                                 width: 60.0,
                                 height: 60.0,
                                 point: _routePoints!.last,
