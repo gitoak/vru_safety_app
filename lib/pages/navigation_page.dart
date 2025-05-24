@@ -261,14 +261,25 @@ class _NavigationPageState extends State<NavigationPage> {
 
       setState(() {
         _dangerZonePolygons = jsonData['features'].map<fm.Polygon>((feature) {
+          
           final coordinates = feature['geometry']['coordinates'][0];
           final points = coordinates
               .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
               .toList();
 
+          final dangerScore = feature['properties']['danger_score'] ?? 0;
+          //if danger score is 2 or less, show empty polygon
+          if (dangerScore <= 3) {
+            return fm.Polygon(
+              points: [],
+              color: Colors.transparent,
+              borderColor: Colors.transparent,
+            );
+          }
+
           return fm.Polygon(
             points: points,
-            color: Colors.red.withOpacity(0.5),
+            color: Colors.red,
             borderColor: Colors.red,
             borderStrokeWidth: 2.0,
           );
