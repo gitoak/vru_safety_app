@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart' as fm; // Aliased import
+import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart';
 import './danger_zone_alert_system.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -57,11 +57,8 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.error!)));
-            // Optionally clear the error in the BLoC after showing it
-            // context.read<NavigationBloc>().add(ErrorOccurred(null));
           }
           if (state.isMapReady && state.userPosition != null) {
-            // Added isMapReady check
             _mapController.move(state.userPosition!, _mapController.zoom);
           }
         },
@@ -74,7 +71,7 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
               if (state.instructions.isNotEmpty)
                 InstructionBar(
                   instructions: state.instructions,
-                ), // Use extracted widget
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
@@ -98,10 +95,10 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                   children: [
                     AddressInputRow(
                       addressController: _addressController,
-                    ), // Use extracted widget
+                    ),
                     SuggestionsList(
                       addressController: _addressController,
-                    ), // Use extracted widget
+                    ),
                   ],
                 ),
               ),
@@ -135,9 +132,8 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                       options: fm.MapOptions(
                         center: state.userPosition ?? const LatLng(0, 0),
                         zoom: _currentZoom,
-                        interactiveFlags: fm
-                            .InteractiveFlag
-                            .all, // Allow full map interaction
+                        maxZoom: 18,
+                        interactiveFlags: fm.InteractiveFlag.all,
                         onMapReady: () {
                           Builder(
                             builder: (context) {
@@ -181,7 +177,7 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                                   color: Colors.blue,
                                   size: 30.0,
                                 ),
-                              ),
+                              ), 
                             ],
                           ),
                         if (state.dangerZonePolygons.isNotEmpty)
