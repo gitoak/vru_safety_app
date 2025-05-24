@@ -19,7 +19,7 @@ class DangerZoneService {
             .toList();
 
         final dangerScore = feature['properties']['danger_score'] ?? 0;
-        if (dangerScore <= 3) {
+        if (dangerScore < 3) {
           return fm.Polygon(
             points: [],
             color: Colors.transparent,

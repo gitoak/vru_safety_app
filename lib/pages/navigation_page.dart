@@ -191,9 +191,30 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                                 width: 80.0,
                                 height: 80.0,
                                 point: state.userPosition!,
+                                builder: (ctx) => Transform.rotate(
+                                  angle: state.compassHeading != null
+                                      ? state.compassHeading! *
+                                            (3.14159265359 / 180)
+                                      : 0,
+                                  child: const Icon(
+                                    Icons.navigation,
+                                    color: Colors.blue,
+                                    size: 30.0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (state.destinationPosition != null)
+                          fm.MarkerLayer(
+                            markers: [
+                              fm.Marker(
+                                width: 80.0,
+                                height: 80.0,
+                                point: state.destinationPosition!,
                                 builder: (ctx) => const Icon(
-                                  Icons.location_history,
-                                  color: Colors.blue,
+                                  Icons.location_on,
+                                  color: Colors.red,
                                   size: 30.0,
                                 ),
                               ),
