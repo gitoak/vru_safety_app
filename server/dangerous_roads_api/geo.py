@@ -13,6 +13,8 @@ def load_map():
     dangerous_roads = gpd.read_file(SHAPE_FILE_PATH).to_crs(epsg=3857)
     tiles_geo = gpd.read_file(GEOJSON_FILE_PATH).to_crs(epsg=3857)
 
+    tiles_geo = tiles_geo[tiles_geo["danger_score"] >= 3]
+
 
 def get_dangerous_roads(lat: float, lon: float):
     point = gpd.GeoSeries(Point(lon, lat), crs="EPSG:4326")
