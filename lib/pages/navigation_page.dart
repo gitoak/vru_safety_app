@@ -34,7 +34,7 @@ class _NavigationPageState extends State<NavigationPage> {
   StreamSubscription<CompassEvent>? _compassSubscription;
   final fm.MapController _mapController = fm.MapController(); // Use fm. alias
   double _currentZoom = 15.0;
-  bool _mapReady = false;
+  final bool _mapReady = false;
   bool _compassMode = false; // Toggle for compass/navigation mode
 
   List<fm.Polygon> _dangerZonePolygons = []; // Corrected type
@@ -200,7 +200,7 @@ class _NavigationPageState extends State<NavigationPage> {
         });
 
         // Removed auto-rotation logic to allow free user control
-        debugPrint('Compass heading updated: $heading degrees');
+        // debugPrint('Compass heading updated: $heading degrees');
       }
     });
   }
@@ -690,7 +690,7 @@ class _InstructionBar extends StatelessWidget {
     final visibleCount = 1;
     return Container(
       width: double.infinity,
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
         children: [
@@ -716,8 +716,8 @@ class _InstructionBar extends StatelessWidget {
           if (instructions.length > 1)
             TextButton(
               onPressed: () {},
-              child: Text('Mehr'),
               style: TextButton.styleFrom(foregroundColor: Colors.white),
+              child: Text('Mehr'),
             ),
         ],
       ),
