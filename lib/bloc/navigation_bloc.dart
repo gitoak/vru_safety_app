@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:vru_safety_app/bloc/navigation_event.dart';
 import 'package:vru_safety_app/bloc/navigation_state.dart';
 import 'package:vru_safety_app/services/location_service.dart';
@@ -57,7 +56,6 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     try {
       final dangerZones = await _dangerZoneService.loadDangerZones();
       add(DangerZonesLoaded(dangerZones));
-      _updateDangerZoneMarkers(dangerZones, emit); // Pass emit here
       // Fetch initial route only after we have the first location
       if (state.userPosition != null) {
         await _fetchInitialRoute(emit);
@@ -229,25 +227,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     emit(state.copyWith(suggestions: event.suggestions));
   }
 
-  void _updateDangerZoneMarkers(List<fm.Polygon> polygons, Emitter<NavigationState> emit) {
-    final markers = polygons.map((polygon) {
-      if (polygon.points.isEmpty) {
-        // Return a dummy marker or handle as needed if points are empty
-        return fm.Marker(point: const LatLng(0,0), builder: (_) => const SizedBox.shrink()); 
-      }
-      final center = polygon.points.reduce(
-        (a, b) => LatLng(
-          (a.latitude + b.latitude) / 2,
-          (a.longitude + b.longitude) / 2,
-        ),
-      );
-      return fm.Marker(
-        point: center,
-        builder: (ctx) => const Icon(Icons.warning, color: Colors.red, size: 30),
-      );
-    }).toList();
-    add(DangerZoneMarkersUpdated(markers));
-  }
+
 
   @override
   Future<void> close() {

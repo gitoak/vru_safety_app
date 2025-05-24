@@ -177,7 +177,7 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                                 height: 80.0,
                                 point: state.userPosition!,
                                 builder: (ctx) => const Icon(
-                                  Icons.location_history, 
+                                  Icons.location_history,
                                   color: Colors.blue,
                                   size: 30.0,
                                 ),
@@ -200,14 +200,15 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
         builder: (context, state) {
           if (state.userPosition == null) return const SizedBox.shrink();
           return FloatingActionButton(
-            heroTag: "compass_toggle",
-            onPressed: () =>
-                context.read<NavigationBloc>().add(ToggleCompassMode()),
-            tooltip: state.compassMode
-                ? 'Exit compass mode'
-                : 'Enter compass mode',
-            backgroundColor: state.compassMode ? Colors.orange : null,
-            child: Icon(state.compassMode ? Icons.explore : Icons.explore_off),
+            heroTag: "reset_map_view",
+            onPressed: () {
+              if (state.userPosition != null) {
+                _mapController.move(state.userPosition!, _currentZoom);
+              }
+            },
+            tooltip: 'Reset map view to current location',
+            backgroundColor: Colors.blue,
+            child: const Icon(Icons.my_location),
           );
         },
       ),
