@@ -108,6 +108,7 @@ class _MyAppState extends State<MyApp> {
             home: OnboardingPage(onFinish: () {
               context.read<OnboardingBloc>().add(CompleteOnboarding());
             }),
+            debugShowCheckedModeBanner: false,
           );
         } else {
           return MaterialApp.router(
@@ -116,6 +117,7 @@ class _MyAppState extends State<MyApp> {
             routerDelegate: _routerDelegate,
             routeInformationParser: _routeInformationParser,
             backButtonDispatcher: RootBackButtonDispatcher(),
+            debugShowCheckedModeBanner: false,
           );
         }
       },
