@@ -54,13 +54,14 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
       body: BlocConsumer<NavigationBloc, NavigationState>(
         listener: (context, state) {
           if (state.error != null && state.error!.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error!)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.error!)));
             // Optionally clear the error in the BLoC after showing it
-            // context.read<NavigationBloc>().add(ErrorOccurred(null)); 
+            // context.read<NavigationBloc>().add(ErrorOccurred(null));
           }
-          if (state.isMapReady && state.userPosition != null) { // Added isMapReady check
+          if (state.isMapReady && state.userPosition != null) {
+            // Added isMapReady check
             _mapController.move(state.userPosition!, _mapController.zoom);
           }
         },
@@ -71,7 +72,9 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
           return Column(
             children: [
               if (state.instructions.isNotEmpty)
-                InstructionBar(instructions: state.instructions), // Use extracted widget
+                InstructionBar(
+                  instructions: state.instructions,
+                ), // Use extracted widget
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
@@ -93,8 +96,12 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   children: [
-                    AddressInputRow(addressController: _addressController), // Use extracted widget
-                    SuggestionsList(addressController: _addressController), // Use extracted widget
+                    AddressInputRow(
+                      addressController: _addressController,
+                    ), // Use extracted widget
+                    SuggestionsList(
+                      addressController: _addressController,
+                    ), // Use extracted widget
                   ],
                 ),
               ),
@@ -128,8 +135,16 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                       options: fm.MapOptions(
                         center: state.userPosition ?? const LatLng(0, 0),
                         zoom: _currentZoom,
-                        onMapReady: () { // Dispatch MapReady event
-                          context.read<NavigationBloc>().add(MapReady());
+                        interactiveFlags: fm
+                            .InteractiveFlag
+                            .all, // Allow full map interaction
+                        onMapReady: () {
+                          Builder(
+                            builder: (context) {
+                              context.read<NavigationBloc>().add(MapReady());
+                              return const SizedBox.shrink();
+                            },
+                          );
                         },
                         onPositionChanged: (position, hasGesture) {
                           if (hasGesture && position.zoom != _currentZoom) {
@@ -162,7 +177,7 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                                 height: 80.0,
                                 point: state.userPosition!,
                                 builder: (ctx) => const Icon(
-                                  Icons.my_location,
+                                  Icons.location_history,
                                   color: Colors.blue,
                                   size: 30.0,
                                 ),
@@ -185,14 +200,15 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
         builder: (context, state) {
           if (state.userPosition == null) return const SizedBox.shrink();
           return FloatingActionButton(
-            heroTag: "compass_toggle",
-            onPressed: () =>
-                context.read<NavigationBloc>().add(ToggleCompassMode()),
-            tooltip: state.compassMode
-                ? 'Exit compass mode'
-                : 'Enter compass mode',
-            backgroundColor: state.compassMode ? Colors.orange : null,
-            child: Icon(state.compassMode ? Icons.explore : Icons.explore_off),
+            heroTag: "reset_map_view",
+            onPressed: () {
+              if (state.userPosition != null) {
+                _mapController.move(state.userPosition!, _currentZoom);
+              }
+            },
+            tooltip: 'Reset map view to current location',
+            backgroundColor: Colors.blue,
+            child: const Icon(Icons.my_location),
           );
         },
       ),

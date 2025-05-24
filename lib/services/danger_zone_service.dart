@@ -29,9 +29,10 @@ class DangerZoneService {
 
         return fm.Polygon(
           points: points,
-          color: Colors.red.withOpacity(0.3), // Made color transparent
+          color: Colors.red.withAlpha((0.3 * 255).toInt()), // Made color transparent
           borderColor: Colors.red,
           borderStrokeWidth: 2.0,
+          isFilled: true,
         );
       }).toList();
     } catch (e) {
