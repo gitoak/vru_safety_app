@@ -72,6 +72,7 @@ flutter:
   assets:
     - assets/sounds/warning_alarm.mp3
     - assets/roads/ # Added directory for shapefiles (datei.shp, datei.dbf, etc.)
+    - Unfallatlas/regensburg_tiles.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

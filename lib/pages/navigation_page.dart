@@ -258,34 +258,26 @@ class _NavigationPageState extends State<NavigationPage> {
         'Unfallatlas/regensburg_tiles.json',
       );
       final Map<String, dynamic> jsonData = json.decode(jsonString);
-      final List<dynamic> features = jsonData['features'];
-
-      final List<fm.Polygon> polygons = features.map((feature) {
-        final List<dynamic> coordinates = feature['geometry']['coordinates'][0];
-        final List<LatLng> points = coordinates
-            .map((coord) => LatLng(coord[1], coord[0]))
-            .toList();
-
-        return fm.Polygon(
-          points: points,
-          color: Colors.orange.withOpacity(0.5),
-          borderColor: Colors.orange,
-          borderStrokeWidth: 2.0,
-        );
-      }).toList();
 
       setState(() {
-        _dangerZonePolygons = polygons;
-        _updateDangerZoneMarkers(); // Update markers when polygons are loaded
-      });
+        _dangerZonePolygons = jsonData['features'].map<fm.Polygon>((feature) {
+          final coordinates = feature['geometry']['coordinates'][0];
+          final points = coordinates
+              .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+              .toList();
 
-      // Debug: Print loaded danger zone polygons and their coordinates
-      print('Loaded danger zone polygons: \n');
-      for (var polygon in polygons) {
-        print(polygon.points);
-      }
-    } catch (error) {
-      print('Error loading danger zones: $error');
+          return fm.Polygon(
+            points: points,
+            color: Colors.red.withOpacity(0.5),
+            borderColor: Colors.red,
+            borderStrokeWidth: 2.0,
+          );
+        }).toList();
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load danger zones: $e';
+      });
     }
   }
 
