@@ -200,6 +200,21 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                               ),
                             ],
                           ),
+                        if (state.destinationPosition != null)
+                          fm.MarkerLayer(
+                            markers: [
+                              fm.Marker(
+                                width: 80.0,
+                                height: 80.0,
+                                point: state.destinationPosition!,
+                                builder: (ctx) => const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                  size: 30.0,
+                                ),
+                              ),
+                            ],
+                          ),
                         if (state.dangerZonePolygons.isNotEmpty)
                           fm.PolygonLayer(polygons: state.dangerZonePolygons),
                         if (state.dangerZoneMarkers.isNotEmpty)
