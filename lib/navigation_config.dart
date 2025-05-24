@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'pages/navigation_page.dart'; // Updated import
-import 'pages/placeholder_page.dart'; // Added import
+import 'pages/navigation_page.dart';
+import 'pages/placeholder_page.dart';
 import 'pages/settings_page.dart';
 
 class NavScreenConfig {
@@ -21,23 +21,23 @@ class NavScreenConfig {
 
 final List<NavScreenConfig> navScreens = [
   NavScreenConfig(
-    route: '/placeholder', // Updated route
-    label: 'Placeholder', // Updated label
-    icon: Icons.help_outline, // Placeholder icon
-    builder: () => const PlaceholderPage(), // Updated builder
+    route: '/placeholder',
+    label: 'Placeholder',
+    icon: Icons.help_outline,
+    builder: () => const PlaceholderPage(),
     inNavBar: true,
   ),
   NavScreenConfig(
-    route: '/navigation', // Updated route
-    label: 'Navigation', // Updated label
-    icon: Icons.navigation, // Updated icon
-    builder: () => const NavigationPage(), // Updated builder
+    route: '/navigation',
+    label: 'Navigation',
+    icon: Icons.navigation,
+    builder: () => const NavigationPage(),
     inNavBar: true,
   ),
   NavScreenConfig(
-    route: '/settings', // Updated route
-    label: 'Settings', // Updated label
-    icon: Icons.settings, // Updated icon
+    route: '/settings',
+    label: 'Settings',
+    icon: Icons.settings,
     builder: () => const SettingsPage(),
     inNavBar: true,
   ),

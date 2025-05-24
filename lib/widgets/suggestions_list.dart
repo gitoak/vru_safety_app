@@ -38,10 +38,9 @@ class SuggestionsList extends StatelessWidget {
               return ListTile(
                 title: Text(
                   s,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontSize: 15),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontSize: 15),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -4,8 +4,12 @@ import 'dart:async';
 part 'panic_events.dart';
 part 'panic_states.dart';
 
+/// BLoC that manages panic confirmation and activation flow.
 class PanicBloc extends Bloc<PanicEvent, PanicState> {
+  /// Timer for auto-canceling the confirmation after timeout.
   Timer? _confirmationTimer;
+
+  /// Timeout duration to wait for user confirmation.
   static const Duration confirmationTimeout = Duration(seconds: 10);
 
   PanicBloc() : super(PanicInitial()) {
@@ -15,27 +19,41 @@ class PanicBloc extends Bloc<PanicEvent, PanicState> {
     on<ResetPanic>(_onResetPanic);
   }
 
-  void _onStartPanicConfirmation(StartPanicConfirmation event, Emitter<PanicState> emit) {
+  /// Begins the confirmation state and starts the timeout.
+  void _onStartPanicConfirmation(
+    StartPanicConfirmation event,
+    Emitter<PanicState> emit,
+  ) {
     emit(PanicConfirming());
-    
-    // Auto-cancel confirmation after timeout
     _confirmationTimer?.cancel();
     _confirmationTimer = Timer(confirmationTimeout, () {
       add(CancelPanicConfirmation());
     });
   }
 
-  void _onCancelPanicConfirmation(CancelPanicConfirmation event, Emitter<PanicState> emit) {
+  /// Cancels the confirmation and returns to the initial state.
+  void _onCancelPanicConfirmation(
+    CancelPanicConfirmation event,
+    Emitter<PanicState> emit,
+  ) {
     _confirmationTimer?.cancel();
     emit(PanicInitial());
   }
 
-  void _onTriggerPanic(TriggerPanic event, Emitter<PanicState> emit) {
+  /// Activates panic immediately with a timestamp.
+  void _onTriggerPanic(
+    TriggerPanic event,
+    Emitter<PanicState> emit,
+  ) {
     _confirmationTimer?.cancel();
     emit(PanicActivated(timestamp: DateTime.now()));
   }
 
-  void _onResetPanic(ResetPanic event, Emitter<PanicState> emit) {
+  /// Resets panic back to the initial state.
+  void _onResetPanic(
+    ResetPanic event,
+    Emitter<PanicState> emit,
+  ) {
     _confirmationTimer?.cancel();
     emit(PanicInitial());
   }

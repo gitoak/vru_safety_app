@@ -8,6 +8,7 @@ class PanicConfirming extends PanicState {}
 
 class PanicActivated extends PanicState {
   final DateTime timestamp;
-  
-  PanicActivated({DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
+
+  PanicActivated({DateTime? timestamp})
+    : timestamp = timestamp ?? DateTime.now();
 }

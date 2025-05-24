@@ -10,11 +10,10 @@ import 'widgets/panic_button.dart';
 import 'theme.dart';
 import 'navigation_config.dart';
 import 'pages/onboarding_page.dart';
-import 'pages/settings_page.dart'; // Import SettingsPage
-import 'pages/placeholder_page.dart'; // Added
-import 'pages/navigation_page.dart'; // Added
+import 'pages/settings_page.dart';
+import 'pages/placeholder_page.dart';
+import 'pages/navigation_page.dart';
 
-// Custom Page for Main Tab Transitions (e.g., Fade)
 class MainTabPage<T> extends Page<T> {
   final Widget child;
 
@@ -38,9 +37,7 @@ class MainTabPage<T> extends Page<T> {
           ) {
             return child;
           },
-      transitionDuration: const Duration(
-        milliseconds: 200,
-      ), // Adjust duration as needed
+      transitionDuration: const Duration(milliseconds: 200),
       transitionsBuilder:
           (
             BuildContext context,
@@ -67,7 +64,7 @@ void main() {
         BlocProvider(create: (context) => NavBloc()),
         BlocProvider(create: (context) => SettingsBloc()),
         BlocProvider(create: (context) => PanicBloc()),
-        BlocProvider(create: (context) => OnboardingBloc()), // Add OnboardingBloc
+        BlocProvider(create: (context) => OnboardingBloc()),
       ],
       child: const MyApp(),
     ),
@@ -83,17 +80,20 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late AppRouterDelegate _routerDelegate;
-  final AppRouteInformationParser _routeInformationParser = AppRouteInformationParser();
+  final AppRouteInformationParser _routeInformationParser =
+      AppRouteInformationParser();
 
   @override
   void initState() {
     super.initState();
     _routerDelegate = AppRouterDelegate(
       navBloc: context.read<NavBloc>(),
-      // Initialize with placeholder page as the default
-      initialPath: AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder')),
+
+      initialPath: AppPath.fromScreen(
+        navScreens.firstWhere((s) => s.route == '/placeholder'),
+      ),
     );
-    // Use Bloc to check onboarding status
+
     context.read<OnboardingBloc>().add(CheckOnboardingStatus());
   }
 
@@ -105,9 +105,11 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp(
             theme: appTheme,
             builder: (context, child) => AccessibilityTools(child: child),
-            home: OnboardingPage(onFinish: () {
-              context.read<OnboardingBloc>().add(CompleteOnboarding());
-            }),
+            home: OnboardingPage(
+              onFinish: () {
+                context.read<OnboardingBloc>().add(CompleteOnboarding());
+              },
+            ),
             debugShowCheckedModeBanner: false,
           );
         } else {
@@ -125,20 +127,18 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-// Helper: get NavScreenConfig from route
 NavScreenConfig? navScreenConfigFromRoute(String? route) {
   if (route == null) return null;
   try {
     return navScreens.firstWhere((screen) => screen.route == route);
   } catch (e) {
-    return null; // Return null if no matching route is found
+    return null;
   }
 }
 
-// --- AppPath (represents the current navigation state) ---
 class AppPath {
   final NavScreenConfig? currentScreen;
-  final List<String> subPageStack; // For sub-pages like /settings/profile
+  final List<String> subPageStack;
 
   AppPath.fromScreen(this.currentScreen, [this.subPageStack = const []]);
 
@@ -160,7 +160,7 @@ class AppPath {
   }
 
   String? get routePath {
-    if (currentScreen == null) return '/'; // Should ideally not happen with proper initialization
+    if (currentScreen == null) return '/';
     String path = currentScreen!.route;
     if (subPageStack.isNotEmpty) {
       path += '/${subPageStack.join('/')}';
@@ -171,8 +171,9 @@ class AppPath {
   static AppPath parse(String uri) {
     final parts = Uri.parse(uri).pathSegments;
     if (parts.isEmpty) {
-      // Default to the first screen in navScreens (placeholder)
-      return AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder'));
+      return AppPath.fromScreen(
+        navScreens.firstWhere((s) => s.route == '/placeholder'),
+      );
     }
     final mainRoute = '/${parts.first}';
     final screenConfig = navScreenConfigFromRoute(mainRoute);
@@ -181,12 +182,13 @@ class AppPath {
       final subStack = parts.length > 1 ? parts.sublist(1) : <String>[];
       return AppPath.fromScreen(screenConfig, subStack);
     }
-    // Fallback to placeholder if route is unknown
-    return AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder'));
+
+    return AppPath.fromScreen(
+      navScreens.firstWhere((s) => s.route == '/placeholder'),
+    );
   }
 }
 
-// --- RouterDelegate ---
 class AppRouterDelegate extends RouterDelegate<AppPath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppPath> {
   @override
@@ -195,8 +197,8 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
   AppPath _currentPath;
 
   AppRouterDelegate({required this.navBloc, required AppPath initialPath})
-      : navigatorKey = GlobalKey<NavigatorState>(),
-        _currentPath = initialPath {
+    : navigatorKey = GlobalKey<NavigatorState>(),
+      _currentPath = initialPath {
     navBloc.stream.listen((navState) {
       final newPath = AppPath.fromNavState(navState);
       if (newPath.routePath != _currentPath.routePath) {
@@ -204,9 +206,11 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
         notifyListeners();
       }
     });
-    // Ensure initial state is reflected
+
     if (_currentPath.currentScreen == null) {
-      _currentPath = AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder'));
+      _currentPath = AppPath.fromScreen(
+        navScreens.firstWhere((s) => s.route == '/placeholder'),
+      );
     }
   }
 
@@ -216,15 +220,20 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
   @override
   Widget build(BuildContext context) {
     if (_currentPath.currentScreen == null) {
-      _currentPath = AppPath.fromScreen(navScreens.firstWhere((s) => s.route == '/placeholder'));
+      _currentPath = AppPath.fromScreen(
+        navScreens.firstWhere((s) => s.route == '/placeholder'),
+      );
     }
 
-    bool isMainTab = navScreens.any((screen) => screen.route == _currentPath.currentScreen?.route && screen.inNavBar);
+    bool isMainTab = navScreens.any(
+      (screen) =>
+          screen.route == _currentPath.currentScreen?.route && screen.inNavBar,
+    );
 
     Widget resolvedPageContent;
 
     if (isMainTab) {
-      AppPage currentPageEnum = AppPage.placeholder; // Default
+      AppPage currentPageEnum = AppPage.placeholder;
       if (_currentPath.currentScreen!.route == '/placeholder') {
         currentPageEnum = AppPage.placeholder;
       } else if (_currentPath.currentScreen!.route == '/navigation') {
@@ -243,7 +252,6 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
         },
       );
     } else {
-      // For non-main tabs or sub-pages, build the page directly
       resolvedPageContent = _currentPath.currentScreen!.builder();
     }
 
@@ -251,13 +259,15 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
       key: navigatorKey,
       pages: [
         MainTabPage(
-          key: ValueKey(isMainTab ? 'MainScaffold_${_currentPath.currentScreen!.route}' : _currentPath.currentScreen!.route),
-          child: resolvedPageContent, 
+          key: ValueKey(
+            isMainTab
+                ? 'MainScaffold_${_currentPath.currentScreen!.route}'
+                : _currentPath.currentScreen!.route,
+          ),
+          child: resolvedPageContent,
         ),
-        
-        // Handle sub-pages if any (these are pushed on top of the main content)
+
         ..._currentPath.subPageStack.map((subRoute) {
-          // Attempt to find a NavScreenConfig for the sub-page
           final subPageConfig = navScreenConfigFromRoute(subRoute);
           if (subPageConfig != null) {
             return MainTabPage(
@@ -265,8 +275,10 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
               child: subPageConfig.builder(),
             );
           }
-          // Fallback for undefined sub-routes
-          return MaterialPage(child: Center(child: Text('Sub Page: $subRoute - Not Implemented')));
+
+          return MaterialPage(
+            child: Center(child: Text('Sub Page: $subRoute - Not Implemented')),
+          );
         }),
       ],
       onPopPage: (route, result) {
@@ -275,10 +287,7 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
         }
         if (_currentPath.subPageStack.isNotEmpty) {
           navBloc.add(const NavPopSubPage());
-        } else {
-          // Optionally handle popping the main page (e.g., exit app or go to a default)
-          // For now, let the system handle it (e.g., Android back button closes app)
-        }
+        } else {}
         return true;
       },
     );
@@ -287,7 +296,7 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
   @override
   Future<void> setNewRoutePath(AppPath configuration) async {
     _currentPath = configuration;
-    // Convert AppPath to NavEvent and dispatch it
+
     if (configuration.currentScreen != null) {
       AppPage targetPage;
       switch (configuration.currentScreen!.route) {
@@ -304,19 +313,19 @@ class AppRouterDelegate extends RouterDelegate<AppPath>
           targetPage = AppPage.placeholder;
       }
       navBloc.add(NavTo(targetPage));
-      // If there are subpages, you might need to dispatch NavPushSubPage events
+
       for (var subRoute in configuration.subPageStack) {
         navBloc.add(NavPushSubPage(subRoute));
       }
     }
-    // notifyListeners() will be called by the navBloc.stream.listen
   }
 }
 
-// --- RouteInformationParser ---
 class AppRouteInformationParser extends RouteInformationParser<AppPath> {
   @override
-  Future<AppPath> parseRouteInformation(RouteInformation routeInformation) async {
+  Future<AppPath> parseRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
     final uri = routeInformation.uri.toString();
     return AppPath.parse(uri);
   }
@@ -327,24 +336,19 @@ class AppRouteInformationParser extends RouteInformationParser<AppPath> {
   }
 }
 
-// Helper: get route from AppPage (ensure it exists and is correct)
 String routeFromAppPage(AppPage page) {
   final config = navScreens.firstWhere(
     (s) => s.label.toLowerCase() == page.name.toLowerCase() && s.inNavBar,
-    // Fallback if label matching fails (e.g. if AppPage enum names differ from labels)
-    // A more robust mapping might be needed if names/labels diverge significantly.
-    orElse: () =>
-        navScreens[page
-            .index], // This assumes AppPage enum order matches navScreens order for main pages
+
+    orElse: () => navScreens[page.index],
   );
   return config.route;
 }
 
-// --- MainScaffold with BottomNavigationBar ---
 class MainScaffold extends StatefulWidget {
   final AppPage currentMainPage;
   final ValueChanged<AppPage> onNavigateToMainPage;
-  final ValueChanged<String> onPushSubPage; // Callback to push a sub-page
+  final ValueChanged<String> onPushSubPage;
 
   const MainScaffold({
     super.key,
@@ -358,17 +362,15 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  // Use PageStorageKeys for each main page to preserve their state
   final PageStorageBucket _bucket = PageStorageBucket();
-  final Key _placeholderKey = const PageStorageKey<String>('placeholderPage'); // Renamed for clarity
+  final Key _placeholderKey = const PageStorageKey<String>('placeholderPage');
   final Key _settingsKey = const PageStorageKey<String>('settingsPage');
-  final Key _navigationKey = const PageStorageKey<String>('navigationPage'); // Renamed for clarity
+  final Key _navigationKey = const PageStorageKey<String>('navigationPage');
 
-  // Define the correct order of AppPage enums as they appear in the BottomNavBar
   final List<AppPage> _bottomNavOrder = [
-    AppPage.placeholder,     // Corresponds to Placeholder (index 0)
-    AppPage.navigation,  // Corresponds to Navigation (index 1)
-    AppPage.settings  // Corresponds to Settings (index 2)
+    AppPage.placeholder,
+    AppPage.navigation,
+    AppPage.settings,
   ];
 
   @override
@@ -378,14 +380,12 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
     bool showBottomNavBar = mainPageConfig?.inNavBar ?? false;
 
-    // Determine the current body widget based on currentMainPage
-    // We wrap each main page view in PageStorage to preserve state
     Widget currentPageWidget;
     switch (widget.currentMainPage) {
       case AppPage.placeholder:
         currentPageWidget = PageStorage(
           bucket: _bucket,
-          child: PlaceholderPage(key: _placeholderKey), // Use updated key
+          child: PlaceholderPage(key: _placeholderKey),
         );
         break;
       case AppPage.settings:
@@ -395,19 +395,13 @@ class _MainScaffoldState extends State<MainScaffold> {
         );
         break;
       case AppPage.navigation:
-        // For SandboxPage, we need to pass the onPushSubPage callback
-        // This requires modifying SandboxPage to accept this callback.
         currentPageWidget = PageStorage(
           bucket: _bucket,
-          child: NavigationPage(
-            key: _navigationKey, // Use updated key
-          ),
+          child: NavigationPage(key: _navigationKey),
         );
         break;
     }
     return Scaffold(
-      // AppBar might be part of individual pages or a common one here
-      // For now, let individual pages (including sub-pages) define their own AppBars
       body: currentPageWidget,
       floatingActionButton: PanicButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -422,9 +416,9 @@ class _MainScaffoldState extends State<MainScaffold> {
                     ),
                   )
                   .toList(),
-              currentIndex: _bottomNavOrder.indexOf(widget.currentMainPage), // Use defined order for currentIndex
+              currentIndex: _bottomNavOrder.indexOf(widget.currentMainPage),
               onTap: (index) {
-                widget.onNavigateToMainPage(_bottomNavOrder[index]); // Use defined order for onTap
+                widget.onNavigateToMainPage(_bottomNavOrder[index]);
               },
             )
           : null,

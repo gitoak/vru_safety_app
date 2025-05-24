@@ -4,7 +4,7 @@ abstract class PanicEvent {}
 
 class TriggerPanic extends PanicEvent {
   final String? reason;
-  
+
   TriggerPanic({this.reason});
 }
 

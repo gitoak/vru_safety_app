@@ -53,11 +53,8 @@ class MapWidget extends StatelessWidget {
             ],
           ),
         if (dangerZonePolygons.isNotEmpty)
-          fm.PolygonLayer(
-            polygons: dangerZonePolygons,
-            polygonCulling: true,
-          )
-        else // Fallback if no danger zones are loaded (optional)
+          fm.PolygonLayer(polygons: dangerZonePolygons, polygonCulling: true)
+        else
           fm.PolygonLayer(
             polygons: [
               fm.Polygon(
@@ -95,24 +92,18 @@ class MapWidget extends StatelessWidget {
                 width: 60.0,
                 height: 60.0,
                 point: destinationPosition!,
-                builder: (context) => const Icon(
-                  Icons.location_on,
-                  color: Colors.red,
-                  size: 30,
-                ),
+                builder: (context) =>
+                    const Icon(Icons.location_on, color: Colors.red, size: 30),
               ),
             if (routePoints != null &&
                 routePoints!.isNotEmpty &&
-                destinationPosition == null) // Show flag if there's a route but no specific destination marker
+                destinationPosition == null)
               fm.Marker(
                 width: 60.0,
                 height: 60.0,
                 point: routePoints!.last,
-                builder: (context) => const Icon(
-                  Icons.flag,
-                  color: Colors.red,
-                  size: 30,
-                ),
+                builder: (context) =>
+                    const Icon(Icons.flag, color: Colors.red, size: 30),
               ),
           ],
         ),

@@ -3,8 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/settings_bloc.dart';
 import '../bloc/settings_state.dart';
 
+/// Onboarding page that guides new users through initial app setup.
+/// Collects user preferences, emergency contacts, and VRU category selection.
 class OnboardingPage extends StatefulWidget {
+  /// Callback function executed when onboarding is completed.
   final VoidCallback? onFinish;
+  
   const OnboardingPage({super.key, this.onFinish});
 
   @override
@@ -12,15 +16,22 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
+  /// Current step in the onboarding process.
   int _step = 0;
+  
+  /// Controller for emergency contact input field.
   late TextEditingController _contactController;
+  
+  /// User's selected VRU (Vulnerable Road User) category.
   VruCategory? _selectedCategory;
 
   @override
   void initState() {
     super.initState();
     final state = context.read<SettingsBloc>().state;
-    _contactController = TextEditingController(text: state.emergencyContact ?? '');
+    _contactController = TextEditingController(
+      text: state.emergencyContact ?? '',
+    );
     _selectedCategory = state.vruCategory;
   }
 
@@ -40,7 +51,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (_selectedCategory != null) {
       context.read<SettingsBloc>().add(SetVruCategory(_selectedCategory!));
     }
-    context.read<SettingsBloc>().add(SetEmergencyContact(_contactController.text));
+    context.read<SettingsBloc>().add(
+      SetEmergencyContact(_contactController.text),
+    );
     if (widget.onFinish != null) widget.onFinish!();
   }
 
@@ -57,7 +70,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        key: const ValueKey('intro'), // For AnimatedSwitcher
+        key: const ValueKey('intro'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
@@ -85,7 +98,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        key: const ValueKey('category'), // For AnimatedSwitcher
+        key: const ValueKey('category'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
@@ -94,19 +107,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          ...VruCategory.values.map((cat) => RadioListTile<VruCategory>(
-                title: Text(_getCategoryLabel(cat)),
-                value: cat,
-                groupValue: _selectedCategory,
-                onChanged: (VruCategory? value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                    context.read<SettingsBloc>().add(SetVruCategory(value));
-                  }
-                },
-              )),
+          ...VruCategory.values.map(
+            (cat) => RadioListTile<VruCategory>(
+              title: Text(_getCategoryLabel(cat)),
+              value: cat,
+              groupValue: _selectedCategory,
+              onChanged: (VruCategory? value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                  context.read<SettingsBloc>().add(SetVruCategory(value));
+                }
+              },
+            ),
+          ),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: _selectedCategory != null ? _nextStep : null,
@@ -138,7 +153,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           TextFormField(
             controller: _contactController,
             decoration: const InputDecoration(
-              labelText: 'Emergency Contact Phone Number', // Added labelText
+              labelText: 'Emergency Contact Phone Number',
               hintText: 'Enter phone number',
               border: OutlineInputBorder(),
             ),
@@ -233,9 +248,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Setup - Step ${_step + 1} of 5'),
-      ),
+      appBar: AppBar(title: Text('Setup - Step ${_step + 1} of 5')),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: currentPage,

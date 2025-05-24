@@ -1,58 +1,71 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
-// Navigation destinations
+/// Defines the main pages available in the application.
 enum AppPage { placeholder, navigation, settings }
 
-// Events
+/// Base class for navigation events.
 abstract class NavEvent extends Equatable {
   const NavEvent();
+
   @override
   List<Object?> get props => [];
 }
 
+/// Event to navigate to a different main page, clearing subpages.
 class NavTo extends NavEvent {
+  /// The page to navigate to.
   final AppPage page;
   const NavTo(this.page);
+
   @override
   List<Object?> get props => [page];
 }
 
+/// Event to push a new subpage route onto the stack.
 class NavPushSubPage extends NavEvent {
+  /// The route identifier of the subpage to push.
   final String route;
   const NavPushSubPage(this.route);
+
   @override
   List<Object?> get props => [route];
 }
 
+/// Event to pop the top subpage route from the stack.
 class NavPopSubPage extends NavEvent {
   const NavPopSubPage();
 }
 
+/// Event to reset navigation to a specific main page, clearing subpages.
 class NavResetToMainPage extends NavEvent {
+  /// The main page to reset to.
   final AppPage page;
   const NavResetToMainPage(this.page);
+
   @override
   List<Object?> get props => [page];
 }
 
-// State
+/// Represents the current navigation state, including main and subpages.
 class NavState extends Equatable {
+  /// The current main page.
   final AppPage mainPage;
-  final List<String> subPageStack; // Stack of sub-page routes
 
-  const NavState({
-    required this.mainPage,
-    this.subPageStack = const [],
-  });
+  /// Stack of subpage route identifiers.
+  final List<String> subPageStack;
 
+  const NavState({required this.mainPage, this.subPageStack = const []});
+
+  /// Returns true if there are any subpages on the stack.
   bool get hasSubPages => subPageStack.isNotEmpty;
-  String? get currentSubPage => subPageStack.isNotEmpty ? subPageStack.last : null;
 
-  NavState copyWith({
-    AppPage? mainPage,
-    List<String>? subPageStack,
-  }) {
+  /// Returns the current top subpage route, or null if none.
+  String? get currentSubPage =>
+      subPageStack.isNotEmpty ? subPageStack.last : null;
+
+  /// Returns a new state with updated main page or subpage stack.
+  NavState copyWith({AppPage? mainPage, List<String>? subPageStack}) {
     return NavState(
       mainPage: mainPage ?? this.mainPage,
       subPageStack: subPageStack ?? this.subPageStack,
@@ -63,8 +76,9 @@ class NavState extends Equatable {
   List<Object?> get props => [mainPage, subPageStack];
 }
 
-// Bloc
+/// BLoC that manages navigation between main pages and subpages.
 class NavBloc extends Bloc<NavEvent, NavState> {
+  /// Creates a NavBloc starting at the placeholder page.
   NavBloc() : super(const NavState(mainPage: AppPage.placeholder)) {
     on<NavTo>(_onNavTo);
     on<NavPushSubPage>(_onNavPushSubPage);
@@ -72,33 +86,42 @@ class NavBloc extends Bloc<NavEvent, NavState> {
     on<NavResetToMainPage>(_onNavResetToMainPage);
   }
 
+  /// Handles [NavTo] by setting the main page and clearing subpages.
   void _onNavTo(NavTo event, Emitter<NavState> emit) {
-    // When navigating to a main page, clear any sub-page stack
     emit(NavState(mainPage: event.page, subPageStack: const []));
   }
 
+  /// Handles [NavPushSubPage] by adding a route to the subpage stack.
   void _onNavPushSubPage(NavPushSubPage event, Emitter<NavState> emit) {
-    // Add sub-page to the stack
     final newStack = List<String>.from(state.subPageStack)..add(event.route);
     emit(state.copyWith(subPageStack: newStack));
   }
 
+  /// Handles [NavPopSubPage] by removing the top route if present.
   void _onNavPopSubPage(NavPopSubPage event, Emitter<NavState> emit) {
     if (state.subPageStack.isNotEmpty) {
-      // Remove the last sub-page from the stack
       final newStack = List<String>.from(state.subPageStack)..removeLast();
       emit(state.copyWith(subPageStack: newStack));
     }
   }
 
-  void _onNavResetToMainPage(NavResetToMainPage event, Emitter<NavState> emit) {
-    // Reset to a specific main page and clear sub-page stack
+  /// Handles [NavResetToMainPage] by setting the main page and clearing subpages.
+  void _onNavResetToMainPage(
+    NavResetToMainPage event,
+    Emitter<NavState> emit,
+  ) {
     emit(NavState(mainPage: event.page, subPageStack: const []));
   }
 
-  // Convenience methods for programmatic navigation
+  /// Convenience method to navigate to a main page.
   void navigateToMainPage(AppPage page) => add(NavTo(page));
+
+  /// Convenience method to push a subpage route.
   void pushSubPage(String route) => add(NavPushSubPage(route));
+
+  /// Convenience method to pop the current subpage.
   void popSubPage() => add(NavPopSubPage());
+
+  /// Convenience method to reset navigation to a main page.
   void resetToMainPage(AppPage page) => add(NavResetToMainPage(page));
 }

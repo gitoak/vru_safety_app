@@ -25,15 +25,14 @@ class GraphHopperApiService {
         final points = path['points'] as String;
         final decodedPoints = decodePolyline(points);
         final instructionsList = path['instructions'] as List<dynamic>? ?? [];
-        return {
-          'points': decodedPoints,
-          'instructions': instructionsList,
-        };
+        return {'points': decodedPoints, 'instructions': instructionsList};
       } else {
         throw Exception('No paths found in GraphHopper response');
       }
     } else {
-      throw Exception('Failed to fetch route from GraphHopper: ${response.statusCode}');
+      throw Exception(
+        'Failed to fetch route from GraphHopper: ${response.statusCode}',
+      );
     }
   }
 }

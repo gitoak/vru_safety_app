@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/panic_bloc/panic_bloc.dart';
 
+/// Emergency panic button widget that provides immediate access to emergency services.
+/// Features a pulsing animation to draw attention and requires confirmation before activation.
 class PanicButton extends StatefulWidget {
   const PanicButton({super.key});
 
@@ -11,7 +13,10 @@ class PanicButton extends StatefulWidget {
 
 class _PanicButtonState extends State<PanicButton>
     with SingleTickerProviderStateMixin {
+  /// Controls the pulsing animation of the panic button.
   late AnimationController _animationController;
+  
+  /// Animation that creates the pulsing effect to draw user attention.
   late Animation<double> _pulseAnimation;
 
   @override
@@ -21,13 +26,9 @@ class _PanicButtonState extends State<PanicButton>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -56,7 +57,7 @@ class _PanicButtonState extends State<PanicButton>
           _animationController.stop();
           _animationController.reset();
         }
-        
+
         if (state is PanicActivated) {
           _showPanicAlert(context);
         }
@@ -74,14 +75,10 @@ class _PanicButtonState extends State<PanicButton>
                       _showPanicConfirmation();
                     }
                   },
-                  backgroundColor: state is PanicConfirming 
-                      ? Colors.orange 
+                  backgroundColor: state is PanicConfirming
+                      ? Colors.orange
                       : Colors.red.shade600,
-                  child: Icon(
-                    Icons.warning,
-                    size: 36,
-                    color: Colors.white,
-                  ),
+                  child: Icon(Icons.warning, size: 36, color: Colors.white),
                 ),
               );
             },
@@ -132,7 +129,8 @@ class _PanicButtonState extends State<PanicButton>
 
 class PanicConfirmationDialog extends StatefulWidget {
   @override
-  State<PanicConfirmationDialog> createState() => _PanicConfirmationDialogState();
+  State<PanicConfirmationDialog> createState() =>
+      _PanicConfirmationDialogState();
 }
 
 class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
@@ -142,7 +140,7 @@ class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
   @override
   void initState() {
     super.initState();
-    // Start panic confirmation in BLoC
+
     context.read<PanicBloc>().add(StartPanicConfirmation());
   }
 
@@ -160,11 +158,9 @@ class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
 
   void _onPanEnd(DragEndDetails details) {
     if (_dragDistance >= _confirmThreshold) {
-      // Trigger panic
       context.read<PanicBloc>().add(TriggerPanic());
       Navigator.of(context).pop();
     } else {
-      // Reset position
       setState(() {
         _dragDistance = 0.0;
       });
@@ -185,11 +181,7 @@ class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.warning,
-                size: 64,
-                color: Colors.red,
-              ),
+              Icon(Icons.warning, size: 64, color: Colors.red),
               SizedBox(height: 16),
               Text(
                 'EMERGENCY ALERT',
@@ -216,7 +208,6 @@ class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
                 ),
                 child: Stack(
                   children: [
-                    // Background track
                     Container(
                       width: double.infinity,
                       height: 60,
@@ -233,7 +224,7 @@ class _PanicConfirmationDialogState extends State<PanicConfirmationDialog> {
                         ),
                       ),
                     ),
-                    // Sliding button
+
                     Positioned(
                       left: _dragDistance,
                       child: GestureDetector(

@@ -4,7 +4,11 @@ import 'package:vru_safety_app/bloc/navigation_bloc.dart';
 import 'package:vru_safety_app/bloc/navigation_event.dart';
 import 'package:vru_safety_app/bloc/navigation_state.dart';
 
+/// Widget that provides an address input field with integrated route calculation.
+/// Includes a text field for destination entry and a "Go" button to trigger routing.
+/// Automatically updates suggestions as the user types in the address field.
 class AddressInputRow extends StatelessWidget {
+  /// Controller for the destination address text field.
   final TextEditingController addressController;
 
   const AddressInputRow({super.key, required this.addressController});
@@ -22,12 +26,13 @@ class AddressInputRow extends StatelessWidget {
                   labelText: 'Destination address',
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (input) =>
-                    context.read<NavigationBloc>().add(UpdateSuggestions(input)),
+                onChanged: (input) => context.read<NavigationBloc>().add(
+                  UpdateSuggestions(input),
+                ),
                 onSubmitted: (_) {
-                  context
-                      .read<NavigationBloc>()
-                      .add(SearchAddress(addressController.text));
+                  context.read<NavigationBloc>().add(
+                    SearchAddress(addressController.text),
+                  );
                 },
               ),
             ),
@@ -36,9 +41,9 @@ class AddressInputRow extends StatelessWidget {
               onPressed: state.routeLoading
                   ? null
                   : () {
-                      context
-                          .read<NavigationBloc>()
-                          .add(SearchAddress(addressController.text));
+                      context.read<NavigationBloc>().add(
+                        SearchAddress(addressController.text),
+                      );
                     },
               child: state.routeLoading
                   ? const SizedBox(

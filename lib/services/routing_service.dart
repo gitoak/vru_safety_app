@@ -30,9 +30,7 @@ class RoutingService {
     );
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body);
-      return [
-        for (final item in data) item['display_name'] as String,
-      ];
+      return [for (final item in data) item['display_name'] as String];
     } else {
       throw Exception('Failed to fetch suggestions');
     }

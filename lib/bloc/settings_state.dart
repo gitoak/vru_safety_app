@@ -1,20 +1,13 @@
 import 'package:equatable/equatable.dart';
 
-enum VruCategory {
-  blind,
-  visuallyImpaired,
-}
+enum VruCategory { blind, visuallyImpaired }
 
 class SettingsState extends Equatable {
   final VruCategory? vruCategory;
   final String? emergencyContact;
-  final String? apiData; // For data set by API, not shown in UI
+  final String? apiData;
 
-  const SettingsState({
-    this.vruCategory,
-    this.emergencyContact,
-    this.apiData,
-  });
+  const SettingsState({this.vruCategory, this.emergencyContact, this.apiData});
 
   SettingsState copyWith({
     VruCategory? vruCategory,

@@ -42,32 +42,35 @@ class LocationService {
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      onPositionUpdate(LatLng(initialPosition.latitude, initialPosition.longitude));
+      onPositionUpdate(
+        LatLng(initialPosition.latitude, initialPosition.longitude),
+      );
     } catch (e) {
       debugPrint("Error getting initial position: $e");
       onError('Error getting initial location: $e');
     }
 
-    _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-      ),
-    )
-        .transform(
-          ThrottleStreamTransformer(
-            (_) => Stream<void>.periodic(const Duration(seconds: 1)),
-          ),
-        ) // Throttle updates to 1 second
-        .listen(
-          (Position position) {
-            onPositionUpdate(LatLng(position.latitude, position.longitude));
-          },
-          onError: (error) {
-            debugPrint("Error in location stream: $error");
-            onError('Error in location stream: $error');
-          },
-        );
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                distanceFilter: 5,
+              ),
+            )
+            .transform(
+              ThrottleStreamTransformer(
+                (_) => Stream<void>.periodic(const Duration(seconds: 1)),
+              ),
+            )
+            .listen(
+              (Position position) {
+                onPositionUpdate(LatLng(position.latitude, position.longitude));
+              },
+              onError: (error) {
+                debugPrint("Error in location stream: $error");
+                onError('Error in location stream: $error');
+              },
+            );
 
     _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
       onCompassUpdate(event.heading);

@@ -61,9 +61,7 @@ class DestinationSearchBar extends StatelessWidget {
               margin: const EdgeInsets.only(top: 4),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                border: Border.all(
-                  color: Colors.grey.shade300,
-                ),
+                border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
@@ -81,10 +79,9 @@ class DestinationSearchBar extends StatelessWidget {
                   return ListTile(
                     title: Text(
                       s,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontSize: 15),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 15),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

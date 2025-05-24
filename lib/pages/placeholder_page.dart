@@ -6,12 +6,8 @@ class PlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Placeholder'),
-      ),
-      body: const Center(
-        child: Text('Placeholder Page'),
-      ),
+      appBar: AppBar(title: const Text('Placeholder')),
+      body: const Center(child: Text('Placeholder Page')),
     );
   }
 }

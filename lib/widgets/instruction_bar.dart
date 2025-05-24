@@ -2,8 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vru_safety_app/utils/instruction_icons.dart';
 
+/// Widget that displays turn-by-turn navigation instructions in a horizontal bar.
+/// Shows the current navigation instruction with an icon and text description.
+/// Supports real-time updates through a stream of instruction changes.
 class InstructionBar extends StatefulWidget {
+  /// Initial set of navigation instructions to display.
   final List<dynamic> initialInstructions;
+  
+  /// Optional stream for real-time instruction updates during navigation.
   final Stream<List<dynamic>>? instructionStream;
 
   const InstructionBar({
@@ -17,7 +23,10 @@ class InstructionBar extends StatefulWidget {
 }
 
 class _InstructionBarState extends State<InstructionBar> {
+  /// Current list of navigation instructions being displayed.
   late List<dynamic> _instructions;
+  
+  /// Subscription to the instruction stream for real-time updates.
   StreamSubscription<List<dynamic>>? _subscription;
 
   @override
@@ -45,7 +54,7 @@ class _InstructionBarState extends State<InstructionBar> {
     if (_instructions.isEmpty) {
       return const SizedBox.shrink();
     }
-    final visibleCount = 1; // Show only the next instruction
+    final visibleCount = 1;
     return Container(
       width: double.infinity,
       color: Theme.of(context).colorScheme.surfaceContainerHighest,

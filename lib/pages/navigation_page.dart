@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart';
-import './danger_zone_alert_system.dart';
+import '../widgets/danger_zone_alert_system.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vru_safety_app/bloc/navigation_bloc.dart';
 import 'package:vru_safety_app/bloc/navigation_event.dart';
@@ -53,7 +53,6 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
 
   void _startInstructionUpdates() {
     _instructionUpdateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      // Fetch updated instructions from the NavigationBloc or service
       final updatedInstructions = context
           .read<NavigationBloc>()
           .state

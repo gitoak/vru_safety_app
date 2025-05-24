@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:vru_safety_app/config/app_constants.dart'; // Import AppConstants
+import 'package:vru_safety_app/config/app_constants.dart';
 
 class GraphHopperApiManager {
-  final String _apiKey; // Keep API key if it's specific to this manager and not the base URL
+  final String _apiKey;
 
   GraphHopperApiManager(this._apiKey);
 
   Future<Map<String, dynamic>> getRoute(LatLng start, LatLng end) async {
-    // Use AppConstants.graphHopperBaseUrl
     final url =
         '${AppConstants.graphHopperBaseUrl}/route?point=${start.latitude},${start.longitude}&point=${end.latitude},${end.longitude}&profile=foot&locale=en&key=$_apiKey';
-    
+
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
