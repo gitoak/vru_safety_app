@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart';
@@ -40,9 +41,31 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
   final TextEditingController _addressController = TextEditingController();
   final fm.MapController _mapController = fm.MapController();
   double _currentZoom = 15.0;
+  final StreamController<List<dynamic>> _instructionStreamController =
+      StreamController.broadcast();
+  Timer? _instructionUpdateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startInstructionUpdates();
+  }
+
+  void _startInstructionUpdates() {
+    _instructionUpdateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      // Fetch updated instructions from the NavigationBloc or service
+      final updatedInstructions = context
+          .read<NavigationBloc>()
+          .state
+          .instructions;
+      _instructionStreamController.add(updatedInstructions);
+    });
+  }
 
   @override
   void dispose() {
+    _instructionUpdateTimer?.cancel();
+    _instructionStreamController.close();
     _addressController.dispose();
     super.dispose();
   }
@@ -70,7 +93,8 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
             children: [
               if (state.instructions.isNotEmpty)
                 InstructionBar(
-                  instructions: state.instructions,
+                  initialInstructions: state.instructions,
+                  instructionStream: _instructionStreamController.stream,
                 ),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -93,12 +117,8 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   children: [
-                    AddressInputRow(
-                      addressController: _addressController,
-                    ),
-                    SuggestionsList(
-                      addressController: _addressController,
-                    ),
+                    AddressInputRow(addressController: _addressController),
+                    SuggestionsList(addressController: _addressController),
                   ],
                 ),
               ),
@@ -177,7 +197,7 @@ class _NavigationPageViewState extends State<_NavigationPageView> {
                                   color: Colors.blue,
                                   size: 30.0,
                                 ),
-                              ), 
+                              ),
                             ],
                           ),
                         if (state.dangerZonePolygons.isNotEmpty)
